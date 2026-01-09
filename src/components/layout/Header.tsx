@@ -130,6 +130,13 @@ export function Header() {
                             {player.name}
                           </p>
                         </div>
+                        <Link
+                          to={`/player/${player.id}`}
+                          onClick={() => setUserMenuOpen(false)}
+                          className="block w-full px-4 py-2 text-left text-sm text-parchment-400 hover:bg-shadow-800 hover:text-parchment-200 transition-colors"
+                        >
+                          My Profile
+                        </Link>
                         <button
                           onClick={() => {
                             setUserMenuOpen(false)
@@ -222,6 +229,13 @@ export function Header() {
                     <div className="px-4 py-2 text-sm text-shadow-500">
                       Signed in as <span className="text-parchment-300">{player.name}</span>
                     </div>
+                    <Link
+                      to={`/player/${player.id}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full px-4 py-3 text-left rounded-md font-ui text-parchment-400 hover:text-parchment-200 hover:bg-shadow-800/50 transition-all duration-300"
+                    >
+                      My Profile
+                    </Link>
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false)

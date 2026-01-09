@@ -14,6 +14,7 @@ import { Gallery } from './pages/Gallery'
 import { Submit } from './pages/Submit'
 import { About } from './pages/About'
 import { Stats } from './pages/Stats'
+import { PlayerProfile } from './pages/PlayerProfile'
 import { ProfileSetup } from './pages/ProfileSetup'
 import { AuthCallback } from './pages/AuthCallback'
 import { NotFound } from './pages/NotFound'
@@ -29,6 +30,7 @@ function App() {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/submit" element={<Submit />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/player/:id" element={<PlayerProfile />} />
             <Route path="/about" element={<About />} />
             <Route path="/setup" element={<ProfileSetup />} />
             <Route path="/auth/callback" element={<AuthCallback />} />

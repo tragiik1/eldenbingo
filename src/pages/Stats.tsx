@@ -231,15 +231,18 @@ export function Stats() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
+                          <Link 
+                            to={`/player/${player.playerId}`}
+                            className="flex items-center gap-3 hover:text-gold-400 transition-colors"
+                          >
                             <span
                               className="w-3 h-3 rounded-full"
                               style={{ backgroundColor: player.playerColor }}
                             />
-                            <span className="font-ui text-parchment-200">
+                            <span className="font-ui text-parchment-200 hover:text-gold-400">
                               {player.playerName}
                             </span>
-                          </div>
+                          </Link>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="font-heading text-gold-400">
