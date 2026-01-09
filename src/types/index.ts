@@ -123,16 +123,11 @@ export interface ApiState<T> {
   error: string | null;
 }
 
-// Player colors palette - Elden Ring inspired
+// Player colors - matches bingo board colors
 export const PLAYER_COLORS = [
-  { name: 'Gold', value: '#d4a84a' },
-  { name: 'Blood', value: '#8b3a3a' },
-  { name: 'Ash', value: '#71717a' },
-  { name: 'Erdtree', value: '#4a7c59' },
-  { name: 'Moonlight', value: '#6b7db3' },
-  { name: 'Flame', value: '#c45c26' },
-  { name: 'Rot', value: '#8b4a5e' },
-  { name: 'Frost', value: '#5a8fa8' },
+  { name: 'Purple', value: '#9b59b6' },
+  { name: 'Red', value: '#e74c3c' },
+  { name: 'Blue', value: '#5dade2' },
 ] as const;
 
 // Optional match tags

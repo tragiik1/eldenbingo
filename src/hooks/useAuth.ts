@@ -207,17 +207,12 @@ export function useAuth(): UseAuthReturn {
   }
 }
 
-// Generate a random player color
+// Generate a random player color (matches bingo board colors)
 function getRandomColor(): string {
   const colors = [
-    '#d4a84a', // Gold
-    '#7c9885', // Sage
-    '#c4785a', // Rust
-    '#8b7355', // Bronze
-    '#6b8e9f', // Steel blue
-    '#9b6b8e', // Mauve
-    '#5f8a8b', // Teal
-    '#a08060', // Tan
+    '#9b59b6', // Purple
+    '#e74c3c', // Red
+    '#5dade2', // Blue
   ]
   return colors[Math.floor(Math.random() * colors.length)]
 }
