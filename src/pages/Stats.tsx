@@ -11,7 +11,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useStats } from '@/hooks/useStats'
-import { formatTotalTime, formatMinutesToTime, formatDateShort } from '@/lib/utils'
+import { formatTotalTime, formatMinutesToTime, formatDateShort, cn } from '@/lib/utils'
 import { PageLoader } from '@/components/ui/LoadingSpinner'
 import { OutcomeBadge } from '@/components/ui/OutcomeBadge'
 
@@ -226,8 +226,14 @@ export function Stats() {
                         className="hover:bg-shadow-900/30 transition-colors"
                       >
                         <td className="px-6 py-4">
-                          <span className="font-heading text-lg text-parchment-300">
-                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                          <span className={cn(
+                            "font-heading text-lg",
+                            index === 0 && "text-gold-400",
+                            index === 1 && "text-parchment-300",
+                            index === 2 && "text-parchment-500",
+                            index > 2 && "text-shadow-400"
+                          )}>
+                            {index + 1}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -264,9 +270,12 @@ export function Stats() {
                           {formatMinutesToTime(player.avgMinutes)}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-gold-400 font-ui font-medium">
-                              {player.currentStreak > 0 ? `🔥 ${player.currentStreak}` : '—'}
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className={cn(
+                              "font-ui font-medium",
+                              player.currentStreak > 0 ? "text-gold-400" : "text-shadow-500"
+                            )}>
+                              {player.currentStreak > 0 ? player.currentStreak : '—'}
                             </span>
                             {player.longestStreak > player.currentStreak && (
                               <span className="text-xs text-shadow-500">

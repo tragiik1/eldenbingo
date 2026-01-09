@@ -1,8 +1,7 @@
 /**
  * Loading spinner component
  * 
- * A subtle, atmospheric loading indicator.
- * Uses the gold accent color with a soft glow.
+ * Clean, minimal loading indicators.
  */
 
 import { cn } from '@/lib/utils'
@@ -14,28 +13,20 @@ interface LoadingSpinnerProps {
 
 export function LoadingSpinner({ size = 'md', className }: LoadingSpinnerProps) {
   const sizeClasses = {
-    sm: 'w-4 h-4',
-    md: 'w-8 h-8',
-    lg: 'w-12 h-12',
+    sm: 'w-4 h-4 border',
+    md: 'w-6 h-6 border-2',
+    lg: 'w-10 h-10 border-2',
   }
 
   return (
-    <div className={cn('relative', sizeClasses[size], className)}>
-      {/* Outer ring */}
-      <div 
-        className="absolute inset-0 rounded-full border-2 border-shadow-700"
-      />
-      {/* Spinning arc */}
-      <div 
-        className="absolute inset-0 rounded-full border-2 border-transparent border-t-gold-500 animate-spin"
-        style={{ animationDuration: '1s' }}
-      />
-      {/* Inner glow */}
-      <div 
-        className="absolute inset-1 rounded-full bg-gold-500/10 animate-pulse"
-        style={{ animationDuration: '2s' }}
-      />
-    </div>
+    <div 
+      className={cn(
+        'rounded-full border-shadow-700 border-t-gold-500 animate-spin',
+        sizeClasses[size],
+        className
+      )}
+      style={{ animationDuration: '0.8s' }}
+    />
   )
 }
 
@@ -46,8 +37,8 @@ export function PageLoader() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
       <LoadingSpinner size="lg" />
-      <p className="text-shadow-500 font-body text-sm">
-        Loading...
+      <p className="text-shadow-500 font-ui text-sm">
+        Loading
       </p>
     </div>
   )
@@ -64,7 +55,7 @@ export function Skeleton({ className }: SkeletonProps) {
   return (
     <div 
       className={cn(
-        'bg-shadow-800/50 rounded-md animate-pulse',
+        'bg-shadow-800/40 rounded-md shimmer',
         className
       )}
     />
@@ -76,15 +67,15 @@ export function Skeleton({ className }: SkeletonProps) {
  */
 export function MatchCardSkeleton() {
   return (
-    <div className="card p-4 space-y-4">
-      <Skeleton className="aspect-square w-full rounded-lg" />
-      <div className="space-y-2">
-        <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-      </div>
-      <div className="flex gap-2">
-        <Skeleton className="h-6 w-20 rounded-full" />
-        <Skeleton className="h-6 w-20 rounded-full" />
+    <div className="card overflow-hidden">
+      <Skeleton className="aspect-square w-full" />
+      <div className="p-4 space-y-3">
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-3 w-1/3" />
+        <div className="flex gap-2 pt-1">
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
       </div>
     </div>
   )

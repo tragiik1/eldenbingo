@@ -55,21 +55,21 @@ export function Match() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-shadow-950/50 via-shadow-950/80 to-shadow-950" />
 
-        <div className="relative container-wide py-12 md:py-20">
+        <div className="relative container-wide py-10 md:py-16">
           {/* Back link */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
           >
             <Link 
               to="/" 
-              className="inline-flex items-center gap-2 text-shadow-500 hover:text-gold-400 transition-colors mb-8 font-ui text-sm"
+              className="inline-flex items-center gap-1.5 text-shadow-500 hover:text-parchment-300 transition-colors mb-6 font-ui text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
               </svg>
-              Back to Archive
+              Back
             </Link>
           </motion.div>
 
@@ -178,7 +178,7 @@ export function Match() {
       </section>
 
       {/* Comments section */}
-      <section className="py-12 md:py-20 border-t border-shadow-800/50">
+      <section className="py-10 md:py-16 border-t border-shadow-800/30">
         <div className="container-narrow">
           <motion.div
             initial={{ opacity: 0 }}

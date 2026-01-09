@@ -63,15 +63,15 @@ export function Gallery() {
       <div className="container-wide">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12 md:mb-16"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-10 md:mb-14"
         >
-          <h1 className="font-heading text-3xl md:text-4xl text-parchment-100 mb-4">
+          <h1 className="font-heading text-2xl md:text-3xl text-parchment-100 mb-2">
             Gallery
           </h1>
-          <p className="text-parchment-400 font-body max-w-xl mx-auto">
+          <p className="text-sm text-parchment-400 font-ui">
             Browse all archived boards
           </p>
         </motion.div>
@@ -136,11 +136,11 @@ function GalleryItem({ match, index, onClick }: GalleryItemProps) {
 
   return (
     <motion.button
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      transition={{ duration: 0.3, delay: index * 0.04 }}
       onClick={onClick}
-      className="group relative aspect-square overflow-hidden rounded-lg bg-shadow-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/50"
+      className="group relative aspect-square overflow-hidden rounded-lg bg-shadow-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/40"
     >
       {/* Placeholder */}
       {!isLoaded && (
@@ -151,7 +151,7 @@ function GalleryItem({ match, index, onClick }: GalleryItemProps) {
       <img
         src={match.board.image_url}
         alt={match.title}
-        className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+        className={`w-full h-full object-cover transition-all duration-400 ease-out group-hover:scale-[1.03] ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         loading="lazy"

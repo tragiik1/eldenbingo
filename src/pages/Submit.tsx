@@ -841,31 +841,25 @@ function PlayersStep(props: PlayersStepProps) {
               )}
             </div>
 
-            {/* Color picker - horizontal buttons */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-shadow-500 font-ui">Color:</span>
-              <div className="flex gap-1.5">
+            {/* Color picker - compact horizontal buttons */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-shadow-500 font-ui shrink-0">Color</span>
+              <div className="flex gap-2">
                 {PLAYER_COLORS.map((c) => (
                   <button
                     key={c.value}
                     type="button"
                     onClick={() => props.updatePlayer(player.id, { color: c.value })}
                     className={cn(
-                      'w-6 h-6 rounded-full transition-all flex items-center justify-center',
+                      'w-4 h-4 rounded-full transition-all duration-200 flex items-center justify-center',
                       player.color === c.value 
-                        ? 'ring-2 ring-offset-1 ring-offset-shadow-900 ring-white scale-110' 
-                        : 'opacity-60 hover:opacity-100 hover:scale-105'
+                        ? 'ring-2 ring-offset-2 ring-offset-shadow-900 ring-parchment-300 scale-125' 
+                        : 'opacity-50 hover:opacity-100 hover:scale-110'
                     )}
                     style={{ backgroundColor: c.value }}
                     title={c.name}
                     aria-label={`Select ${c.name}`}
-                  >
-                    {player.color === c.value && (
-                      <svg className="w-3 h-3 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
+                  />
                 ))}
               </div>
             </div>

@@ -142,43 +142,42 @@ export const ACCOLADES = [
   { id: 'tournament', label: 'Tournament' },
 ] as const;
 
-// Achievement badges
+// Achievement badges - clean text-based design
 export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: string;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
   // Win-based
-  { id: 'first-blood', name: 'First Blood', description: 'Win your first match', icon: '🏆', rarity: 'common' },
-  { id: 'veteran', name: 'Veteran', description: 'Win 10 matches', icon: '⚔️', rarity: 'rare' },
-  { id: 'champion', name: 'Champion', description: 'Win 25 matches', icon: '👑', rarity: 'epic' },
-  { id: 'legend', name: 'Legend', description: 'Win 50 matches', icon: '🌟', rarity: 'legendary' },
+  { id: 'first-blood', name: 'First Blood', description: 'Win your first match', rarity: 'common' },
+  { id: 'veteran', name: 'Veteran', description: 'Win 10 matches', rarity: 'rare' },
+  { id: 'champion', name: 'Champion', description: 'Win 25 matches', rarity: 'epic' },
+  { id: 'legend', name: 'Legend', description: 'Win 50 matches', rarity: 'legendary' },
   
   // Streak-based
-  { id: 'hot-streak', name: 'Hot Streak', description: 'Win 3 matches in a row', icon: '🔥', rarity: 'rare' },
-  { id: 'unstoppable', name: 'Unstoppable', description: 'Win 5 matches in a row', icon: '💪', rarity: 'epic' },
-  { id: 'elden-lord', name: 'Elden Lord', description: 'Win 10 matches in a row', icon: '✨', rarity: 'legendary' },
+  { id: 'hot-streak', name: 'Hot Streak', description: 'Win 3 matches in a row', rarity: 'rare' },
+  { id: 'unstoppable', name: 'Unstoppable', description: 'Win 5 matches in a row', rarity: 'epic' },
+  { id: 'elden-lord', name: 'Elden Lord', description: 'Win 10 matches in a row', rarity: 'legendary' },
   
   // Speed-based
-  { id: 'speed-demon', name: 'Speed Demon', description: 'Win a match in under 1 hour', icon: '⚡', rarity: 'rare' },
-  { id: 'lightning', name: 'Lightning', description: 'Win a match in under 45 minutes', icon: '🌩️', rarity: 'epic' },
+  { id: 'speed-demon', name: 'Speed Demon', description: 'Win a match in under 1 hour', rarity: 'rare' },
+  { id: 'lightning', name: 'Lightning', description: 'Win a match in under 45 minutes', rarity: 'epic' },
   
   // Participation
-  { id: 'dedicated', name: 'Dedicated', description: 'Play 10 matches', icon: '📚', rarity: 'common' },
-  { id: 'regular', name: 'Regular', description: 'Play 25 matches', icon: '🎮', rarity: 'rare' },
-  { id: 'addicted', name: 'Addicted', description: 'Play 50 matches', icon: '💀', rarity: 'epic' },
+  { id: 'dedicated', name: 'Dedicated', description: 'Play 10 matches', rarity: 'common' },
+  { id: 'regular', name: 'Regular', description: 'Play 25 matches', rarity: 'rare' },
+  { id: 'addicted', name: 'Addicted', description: 'Play 50 matches', rarity: 'epic' },
   
   // Outcome-based
-  { id: 'blackout-king', name: 'Blackout King', description: 'Win a blackout match', icon: '🖤', rarity: 'rare' },
-  { id: 'perfectionist', name: 'Perfectionist', description: 'Win 5 blackout matches', icon: '💎', rarity: 'epic' },
+  { id: 'blackout-king', name: 'Blackout King', description: 'Win a blackout match', rarity: 'rare' },
+  { id: 'perfectionist', name: 'Perfectionist', description: 'Win 5 blackout matches', rarity: 'epic' },
   
   // Special
-  { id: 'survivor', name: 'Survivor', description: 'Finish a match over 3 hours', icon: '🏔️', rarity: 'rare' },
-  { id: 'rivalry', name: 'Rivalry', description: 'Play 10 matches against the same player', icon: '⚔️', rarity: 'rare' },
+  { id: 'survivor', name: 'Survivor', description: 'Finish a match over 3 hours', rarity: 'rare' },
+  { id: 'rivalry', name: 'Rivalry', description: 'Play 10 matches against the same player', rarity: 'rare' },
 ];
 
 export interface PlayerAchievement {

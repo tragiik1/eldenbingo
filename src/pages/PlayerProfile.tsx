@@ -92,9 +92,9 @@ export function PlayerProfile() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12"
         >
-          <StatCard label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} />
+          <StatCard label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} highlight />
           <StatCard label="Total Wins" value={stats.wins.toString()} />
-          <StatCard label="Current Streak" value={stats.currentStreak > 0 ? `🔥 ${stats.currentStreak}` : '—'} />
+          <StatCard label="Current Streak" value={stats.currentStreak > 0 ? stats.currentStreak.toString() : '—'} highlight={stats.currentStreak > 0} />
           <StatCard label="Best Streak" value={stats.longestStreak.toString()} />
           <StatCard label="Total Time" value={formatTotalTime(stats.totalMinutes)} />
           <StatCard label="Avg Duration" value={formatMinutesToTime(stats.avgMinutes)} />
@@ -262,11 +262,17 @@ export function PlayerProfile() {
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="card p-4 text-center">
+    <div className={cn(
+      "card p-4 text-center",
+      highlight && "border-gold-600/20 bg-gold-600/5"
+    )}>
       <p className="text-xs text-shadow-500 uppercase tracking-wider mb-1">{label}</p>
-      <p className="font-heading text-xl text-parchment-200">{value}</p>
+      <p className={cn(
+        "font-heading text-xl",
+        highlight ? "text-gold-400" : "text-parchment-200"
+      )}>{value}</p>
     </div>
   )
 }
@@ -274,37 +280,64 @@ function StatCard({ label, value }: { label: string; value: string }) {
 function AchievementCard({ achievement }: { achievement: PlayerAchievement }) {
   const { achievement: ach, unlockedAt } = achievement
 
-  const rarityColors = {
-    common: 'border-shadow-600 bg-shadow-800/50',
-    rare: 'border-blue-500/50 bg-blue-500/10',
-    epic: 'border-purple-500/50 bg-purple-500/10',
-    legendary: 'border-gold-500/50 bg-gold-500/10',
+  const rarityStyles = {
+    common: {
+      border: 'border-shadow-600',
+      bg: 'bg-shadow-800/50',
+      text: 'text-parchment-400',
+      glow: '',
+    },
+    rare: {
+      border: 'border-blue-500/40',
+      bg: 'bg-blue-500/8',
+      text: 'text-blue-400',
+      glow: 'shadow-[0_0_20px_rgba(59,130,246,0.1)]',
+    },
+    epic: {
+      border: 'border-purple-500/40',
+      bg: 'bg-purple-500/8',
+      text: 'text-purple-400',
+      glow: 'shadow-[0_0_20px_rgba(168,85,247,0.1)]',
+    },
+    legendary: {
+      border: 'border-gold-500/50',
+      bg: 'bg-gold-500/10',
+      text: 'text-gold-400',
+      glow: 'shadow-[0_0_25px_rgba(212,168,74,0.15)]',
+    },
   }
 
-  const rarityText = {
-    common: 'text-shadow-400',
-    rare: 'text-blue-400',
-    epic: 'text-purple-400',
-    legendary: 'text-gold-400',
-  }
+  const style = rarityStyles[ach.rarity]
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        "card p-4 border-2",
-        rarityColors[ach.rarity]
+        "card p-4 border transition-all duration-300 hover:scale-[1.02]",
+        style.border,
+        style.bg,
+        style.glow
       )}
     >
-      <div className="text-3xl mb-2">{ach.icon}</div>
-      <h3 className={cn("font-heading text-sm mb-1", rarityText[ach.rarity])}>
-        {ach.name}
-      </h3>
-      <p className="text-xs text-shadow-500 mb-2">{ach.description}</p>
+      <div className="flex items-start justify-between mb-2">
+        <h3 className={cn("font-heading text-sm", style.text)}>
+          {ach.name}
+        </h3>
+        <span className={cn(
+          "text-[10px] font-ui uppercase tracking-wider px-1.5 py-0.5 rounded",
+          ach.rarity === 'legendary' && "bg-gold-500/20 text-gold-400",
+          ach.rarity === 'epic' && "bg-purple-500/20 text-purple-400",
+          ach.rarity === 'rare' && "bg-blue-500/20 text-blue-400",
+          ach.rarity === 'common' && "bg-shadow-700 text-shadow-400"
+        )}>
+          {ach.rarity}
+        </span>
+      </div>
+      <p className="text-xs text-shadow-500 mb-2 leading-relaxed">{ach.description}</p>
       {unlockedAt && (
-        <p className="text-xs text-shadow-600">
-          {formatDateShort(unlockedAt)}
+        <p className="text-[10px] text-shadow-600 font-ui">
+          Unlocked {formatDateShort(unlockedAt)}
         </p>
       )}
     </motion.div>
