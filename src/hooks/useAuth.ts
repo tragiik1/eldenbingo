@@ -13,11 +13,21 @@ import type { Player } from '@/types'
 // Local storage keys
 const PLAYER_CACHE_KEY = 'eldenbingo-player'
 
+// Admin user IDs (Supabase auth user IDs)
+// Set VITE_ADMIN_USER_IDS in environment variables (comma-separated)
+const ADMIN_USER_IDS = (import.meta.env.VITE_ADMIN_USER_IDS || '').split(',').filter(Boolean)
+
+function isUserAdmin(userId: string | undefined): boolean {
+  if (!userId) return false
+  return ADMIN_USER_IDS.includes(userId)
+}
+
 interface AuthState {
   user: User | null
   player: Player | null
   loading: boolean
   needsSetup: boolean
+  isAdmin: boolean
 }
 
 interface UseAuthReturn extends AuthState {
@@ -53,6 +63,7 @@ export function useAuth(): UseAuthReturn {
     player: null,
     loading: true,
     needsSetup: false,
+    isAdmin: false,
   })
 
   const discordUsername = state.user?.user_metadata?.full_name || 
@@ -65,7 +76,7 @@ export function useAuth(): UseAuthReturn {
   useEffect(() => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
-      setState({ user: null, player: null, loading: false, needsSetup: false })
+      setState({ user: null, player: null, loading: false, needsSetup: false, isAdmin: false })
       return
     }
 
@@ -85,7 +96,7 @@ export function useAuth(): UseAuthReturn {
         if (error) {
           console.error('[Auth] Session error:', error)
           if (isMounted) {
-            setState({ user: null, player: null, loading: false, needsSetup: false })
+            setState({ user: null, player: null, loading: false, needsSetup: false, isAdmin: false })
           }
           return
         }
@@ -94,12 +105,15 @@ export function useAuth(): UseAuthReturn {
           console.log('[Auth] No session')
           setCachedPlayer(null) // Clear cache if not logged in
           if (isMounted) {
-            setState({ user: null, player: null, loading: false, needsSetup: false })
+            setState({ user: null, player: null, loading: false, needsSetup: false, isAdmin: false })
           }
           return
         }
 
         console.log('[Auth] Session found for:', session.user.email)
+        console.log('[Auth] User ID:', session.user.id)
+        const admin = isUserAdmin(session.user.id)
+        console.log('[Auth] Is admin:', admin)
 
         // If we have cached player, use it immediately
         if (cachedPlayer) {
@@ -110,6 +124,7 @@ export function useAuth(): UseAuthReturn {
               player: cachedPlayer,
               loading: false,
               needsSetup: false,
+              isAdmin: admin,
             })
           }
           
@@ -153,12 +168,13 @@ export function useAuth(): UseAuthReturn {
             player: player as Player | null,
             loading: false,
             needsSetup: !player,
+            isAdmin: admin,
           })
         }
       } catch (err) {
         console.error('[Auth] Init error:', err)
         if (isMounted) {
-          setState({ user: null, player: null, loading: false, needsSetup: false })
+          setState({ user: null, player: null, loading: false, needsSetup: false, isAdmin: false })
         }
       }
     }
@@ -173,7 +189,7 @@ export function useAuth(): UseAuthReturn {
         if (event === 'SIGNED_OUT') {
           setCachedPlayer(null)
           if (isMounted) {
-            setState({ user: null, player: null, loading: false, needsSetup: false })
+            setState({ user: null, player: null, loading: false, needsSetup: false, isAdmin: false })
           }
         } else if (event === 'SIGNED_IN' && session) {
           // Re-run init on sign in

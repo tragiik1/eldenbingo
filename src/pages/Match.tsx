@@ -5,9 +5,11 @@
  * Board image is the focus, with supporting details around it.
  */
 
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useMatch } from '@/hooks/useMatch'
+import { useAuthContext } from '@/contexts/AuthContext'
 import { formatDate, generatePlayerGradient } from '@/lib/utils'
 import { PageLoader } from '@/components/ui/LoadingSpinner'
 import { PlayerBadge } from '@/components/ui/PlayerBadge'
@@ -15,10 +17,13 @@ import { OutcomeBadge } from '@/components/ui/OutcomeBadge'
 import { AccoladeList } from '@/components/ui/AccoladeBadge'
 import { CommentList } from '@/components/comments/CommentList'
 import { CommentForm } from '@/components/comments/CommentForm'
+import { EditMatchModal } from '@/components/match/EditMatchModal'
 
 export function Match() {
   const { id } = useParams<{ id: string }>()
-  const { match, loading, error, addComment } = useMatch(id)
+  const { match, loading, error, addComment, refetch } = useMatch(id)
+  const { isAdmin } = useAuthContext()
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   if (loading) {
     return <PageLoader />
@@ -56,21 +61,35 @@ export function Match() {
         <div className="absolute inset-0 bg-gradient-to-b from-shadow-950/50 via-shadow-950/80 to-shadow-950" />
 
         <div className="relative container-wide py-10 md:py-16">
-          {/* Back link */}
+          {/* Top bar with back link and edit button */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
+            className="flex items-center justify-between mb-6"
           >
             <Link 
               to="/" 
-              className="inline-flex items-center gap-1.5 text-shadow-500 hover:text-parchment-300 transition-colors mb-6 font-ui text-sm"
+              className="inline-flex items-center gap-1.5 text-shadow-500 hover:text-parchment-300 transition-colors font-ui text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
               </svg>
               Back
             </Link>
+
+            {/* Admin Edit Button */}
+            {isAdmin && (
+              <button
+                onClick={() => setEditModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-ui text-parchment-400 hover:text-parchment-200 bg-shadow-800/60 hover:bg-shadow-800 border border-shadow-700 rounded-md transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+              </button>
+            )}
           </motion.div>
 
           {/* Main content grid */}
@@ -201,6 +220,16 @@ export function Match() {
           </motion.div>
         </div>
       </section>
+
+      {/* Edit Modal (Admin only) */}
+      {isAdmin && (
+        <EditMatchModal
+          match={match}
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          onSave={refetch}
+        />
+      )}
     </div>
   )
 }

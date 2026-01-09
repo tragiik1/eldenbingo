@@ -15,6 +15,7 @@ interface AuthContextType {
   player: Player | null
   loading: boolean
   needsSetup: boolean
+  isAdmin: boolean
   login: () => Promise<void>
   logout: () => Promise<void>
   setupPlayer: (displayName: string) => Promise<void>

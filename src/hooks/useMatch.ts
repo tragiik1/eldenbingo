@@ -99,6 +99,7 @@ interface UseMatchReturn {
   loading: boolean
   error: string | null
   refresh: () => void
+  refetch: () => void
   addComment: (authorName: string, content: string) => Promise<boolean>
 }
 
@@ -247,6 +248,7 @@ export function useMatch(matchId: string | undefined): UseMatchReturn {
     loading,
     error,
     refresh: fetchMatch,
+    refetch: fetchMatch,
     addComment,
   }
 }
