@@ -12,6 +12,7 @@ import { Match } from './pages/Match'
 import { Gallery } from './pages/Gallery'
 import { Submit } from './pages/Submit'
 import { About } from './pages/About'
+import { Stats } from './pages/Stats'
 import { NotFound } from './pages/NotFound'
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="/match/:id" element={<Match />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/submit" element={<Submit />} />
+          <Route path="/stats" element={<Stats />} />
           <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Route>

@@ -114,3 +114,70 @@ export const outcomeLabels: Record<string, string> = {
   abandoned: 'Abandoned',
   draw: 'Draw',
 };
+
+/**
+ * Parse time string to minutes
+ * Handles formats like "3h 42m", "1h", "45m", "2h 15m 30s"
+ */
+export function parseTimeToMinutes(timeStr: string): number {
+  if (!timeStr || typeof timeStr !== 'string') return 0
+  
+  let totalMinutes = 0
+  
+  // Extract hours
+  const hoursMatch = timeStr.match(/(\d+)\s*h/i)
+  if (hoursMatch) {
+    totalMinutes += parseInt(hoursMatch[1], 10) * 60
+  }
+  
+  // Extract minutes
+  const minutesMatch = timeStr.match(/(\d+)\s*m/i)
+  if (minutesMatch) {
+    totalMinutes += parseInt(minutesMatch[1], 10)
+  }
+  
+  // Extract seconds (optional, convert to minutes)
+  const secondsMatch = timeStr.match(/(\d+)\s*s/i)
+  if (secondsMatch) {
+    totalMinutes += parseInt(secondsMatch[1], 10) / 60
+  }
+  
+  return totalMinutes
+}
+
+/**
+ * Format minutes to human-readable string
+ * e.g., 222 -> "3h 42m", 60 -> "1h", 45 -> "45m"
+ */
+export function formatMinutesToTime(minutes: number): string {
+  if (minutes < 1) return '< 1m'
+  
+  const hours = Math.floor(minutes / 60)
+  const mins = Math.round(minutes % 60)
+  
+  if (hours > 0 && mins > 0) {
+    return `${hours}h ${mins}m`
+  } else if (hours > 0) {
+    return `${hours}h`
+  } else {
+    return `${mins}m`
+  }
+}
+
+/**
+ * Format total hours and minutes nicely
+ * e.g., 127.5 hours -> "127h 30m"
+ */
+export function formatTotalTime(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = Math.round(totalMinutes % 60)
+  
+  if (hours > 0 && minutes > 0) {
+    return `${hours}h ${minutes}m`
+  } else if (hours > 0) {
+    return `${hours}h`
+  } else if (minutes > 0) {
+    return `${minutes}m`
+  }
+  return '0m'
+}

@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { path: '/', label: 'Matches' },
   { path: '/gallery', label: 'Gallery' },
+  { path: '/stats', label: 'Stats' },
   { path: '/submit', label: 'Submit' },
   { path: '/about', label: 'About' },
 ]
