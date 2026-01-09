@@ -113,7 +113,7 @@ export function useStats(): Stats {
   return { ...stats, refetch: fetchAndCalculateStats }
 }
 
-function calculateStats(matches: MatchWithDetails[]): Omit<Stats, 'loading' | 'error'> {
+function calculateStats(matches: MatchWithDetails[]): Omit<Stats, 'loading' | 'error' | 'refetch'> {
   // Player stats map
   const playerMap = new Map<string, PlayerStats>()
   
