@@ -26,6 +26,9 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'eldenbingo-auth',
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
   }
 );
