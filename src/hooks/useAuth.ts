@@ -73,9 +73,22 @@ export function useAuth(): UseAuthReturn {
       return
     }
 
+    // Timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      setState(prev => {
+        if (prev.loading) {
+          console.warn('Auth timeout - stopping loading state')
+          return { ...prev, loading: false }
+        }
+        return prev
+      })
+    }, 5000)
+
     // Get initial session
     supabase.auth.getSession()
       .then(async ({ data: { session }, error }) => {
+        clearTimeout(timeout)
+        
         if (error) {
           console.error('Error getting session:', error)
           setState({
@@ -105,6 +118,7 @@ export function useAuth(): UseAuthReturn {
         }
       })
       .catch((err) => {
+        clearTimeout(timeout)
         console.error('Auth error:', err)
         setState({
           user: null,
@@ -136,7 +150,10 @@ export function useAuth(): UseAuthReturn {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [fetchPlayer])
 
   // Login handler
