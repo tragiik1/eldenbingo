@@ -5,7 +5,7 @@
  * Password first, then image, then details.
  */
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -677,6 +677,99 @@ function DetailsStep(props: DetailsStepProps) {
   )
 }
 
+// Player name autocomplete input
+function PlayerNameInput({ 
+  value, 
+  onChange, 
+  placeholder 
+}: { 
+  value: string
+  onChange: (name: string) => void
+  placeholder: string 
+}) {
+  const [suggestions, setSuggestions] = useState<Array<{ id: string; name: string; color: string }>>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch player suggestions
+  useEffect(() => {
+    const searchPlayers = async () => {
+      if (value.trim().length < 1) {
+        setSuggestions([])
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from('players')
+          .select('id, name, color')
+          .ilike('name', `%${value}%`)
+          .limit(5)
+
+        if (!error && data) {
+          setSuggestions(data)
+        }
+      } catch (err) {
+        console.error('Error searching players:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    const debounce = setTimeout(searchPlayers, 200)
+    return () => clearTimeout(debounce)
+  }, [value])
+
+  return (
+    <div className="relative flex-1">
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setShowSuggestions(true)}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+        placeholder={placeholder}
+        className="input w-full"
+        autoComplete="off"
+      />
+      
+      {/* Suggestions dropdown */}
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-shadow-900 border border-shadow-700 rounded-lg shadow-xl z-20 overflow-hidden">
+          {suggestions.map((player) => (
+            <button
+              key={player.id}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                onChange(player.name)
+                setShowSuggestions(false)
+              }}
+              className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-shadow-800 transition-colors"
+            >
+              <span 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: player.color }}
+              />
+              <span className="text-parchment-200 font-ui text-sm">{player.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <div className="w-4 h-4 border-2 border-shadow-600 border-t-gold-400 rounded-full animate-spin" />
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface PlayersStepProps {
   players: PlayerInput[]
   updatePlayer: (id: string, updates: Partial<PlayerInput>) => void
@@ -711,15 +804,11 @@ function PlayersStep(props: PlayersStepProps) {
           <div key={player.id} className="card p-4 space-y-3">
             {/* Player header with name and remove */}
             <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={player.name}
-                  onChange={(e) => props.updatePlayer(player.id, { name: e.target.value })}
-                  placeholder={`Player ${index + 1} name`}
-                  className="input w-full"
-                />
-              </div>
+              <PlayerNameInput
+                value={player.name}
+                onChange={(name) => props.updatePlayer(player.id, { name })}
+                placeholder={`Player ${index + 1} name`}
+              />
 
               {/* Winner toggle */}
               {showWinner && (
@@ -755,16 +844,16 @@ function PlayersStep(props: PlayersStepProps) {
             {/* Color picker - horizontal buttons */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-shadow-500 font-ui">Color:</span>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 {PLAYER_COLORS.map((c) => (
                   <button
                     key={c.value}
                     type="button"
                     onClick={() => props.updatePlayer(player.id, { color: c.value })}
                     className={cn(
-                      'w-8 h-8 rounded-full transition-all flex items-center justify-center',
+                      'w-6 h-6 rounded-full transition-all flex items-center justify-center',
                       player.color === c.value 
-                        ? 'ring-2 ring-offset-2 ring-offset-shadow-900 ring-white scale-110' 
+                        ? 'ring-2 ring-offset-1 ring-offset-shadow-900 ring-white scale-110' 
                         : 'opacity-60 hover:opacity-100 hover:scale-105'
                     )}
                     style={{ backgroundColor: c.value }}
@@ -772,7 +861,7 @@ function PlayersStep(props: PlayersStepProps) {
                     aria-label={`Select ${c.name}`}
                   >
                     {player.color === c.value && (
-                      <svg className="w-4 h-4 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     )}
