@@ -138,6 +138,7 @@ export function useMatch(matchId: string | undefined): UseMatchReturn {
       }
 
       // Fetch match with all relations
+      console.log('[useMatch] Fetching match:', matchId)
       const { data, error: fetchError } = await supabase
         .from('matches')
         .select(`
@@ -160,6 +161,15 @@ export function useMatch(matchId: string | undefined): UseMatchReturn {
       typedData.comments = typedData.comments.sort(
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       )
+
+      console.log('[useMatch] Fetched match data:', {
+        title: typedData.title,
+        outcome: typedData.outcome,
+        players: typedData.match_players.map(mp => ({
+          name: mp.player.name,
+          is_winner: mp.is_winner,
+        }))
+      })
 
       setMatch(typedData)
     } catch (err) {

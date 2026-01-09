@@ -4,7 +4,7 @@
  * Admin-only modal for editing match details.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -47,6 +47,35 @@ export function EditMatchModal({ match, isOpen, onClose, onSave }: EditMatchModa
     }))
   )
 
+  // Reset form state when modal opens or match changes
+  useEffect(() => {
+    if (isOpen) {
+      console.log('[EditMatchModal] Resetting form with match data:', {
+        title: match.title,
+        players: match.match_players.map(mp => ({
+          name: mp.player.name,
+          is_winner: mp.is_winner,
+        }))
+      })
+      setTitle(match.title)
+      setPlayedAt(match.played_at.split('T')[0])
+      setOutcome(match.outcome)
+      setTimeTaken(match.metadata.time_taken || '')
+      setNotes(match.metadata.notes || '')
+      setPlayers(
+        match.match_players.map(mp => ({
+          id: mp.id,
+          name: mp.player.name,
+          color: mp.color,
+          is_winner: mp.is_winner || false,
+          player_id: mp.player_id,
+          match_player_id: mp.id,
+        }))
+      )
+      setError(null)
+    }
+  }, [isOpen, match])
+
   const updatePlayer = (id: string, updates: Partial<PlayerEdit>) => {
     setPlayers(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
   }
@@ -59,9 +88,23 @@ export function EditMatchModal({ match, isOpen, onClose, onSave }: EditMatchModa
     setSaving(true)
     setError(null)
 
+    console.log('[EditMatchModal] Starting save with data:', {
+      matchId: match.id,
+      title,
+      playedAt,
+      outcome,
+      timeTaken,
+      notes,
+      players: players.map(p => ({
+        name: p.name,
+        is_winner: p.is_winner,
+        match_player_id: p.match_player_id,
+      }))
+    })
+
     try {
       // Update match record
-      const { error: matchError } = await supabase
+      const { data: matchData, error: matchError } = await supabase
         .from('matches')
         .update({
           title,
@@ -73,44 +116,56 @@ export function EditMatchModal({ match, isOpen, onClose, onSave }: EditMatchModa
           },
         })
         .eq('id', match.id)
+        .select()
 
       if (matchError) {
         console.error('Match update error:', matchError)
         throw matchError
       }
+      console.log('[EditMatchModal] Match updated:', matchData)
 
       // Update each player
       for (const player of players) {
         // Update player name if changed
         const originalPlayer = match.match_players.find(mp => mp.id === player.id)
         if (originalPlayer && originalPlayer.player.name !== player.name) {
-          const { error: playerNameError } = await supabase
+          const { data: playerData, error: playerNameError } = await supabase
             .from('players')
             .update({ name: player.name })
             .eq('id', player.player_id)
+            .select()
           
           if (playerNameError) {
             console.error('Player name update error:', playerNameError)
             throw playerNameError
           }
+          console.log('[EditMatchModal] Player name updated:', playerData)
         }
 
         // Update match_player record (color, is_winner)
-        const { error: matchPlayerError } = await supabase
+        console.log('[EditMatchModal] Updating match_player:', {
+          id: player.match_player_id,
+          color: player.color,
+          is_winner: player.is_winner,
+        })
+        
+        const { data: mpData, error: matchPlayerError } = await supabase
           .from('match_players')
           .update({
             color: player.color,
             is_winner: player.is_winner,
           })
           .eq('id', player.match_player_id)
+          .select()
         
         if (matchPlayerError) {
           console.error('Match player update error:', matchPlayerError)
           throw matchPlayerError
         }
+        console.log('[EditMatchModal] Match player updated:', mpData)
       }
 
-      console.log('[EditMatchModal] Save successful, refreshing...')
+      console.log('[EditMatchModal] All saves successful! Calling onSave to refetch...')
       onSave()
       onClose()
     } catch (err) {
