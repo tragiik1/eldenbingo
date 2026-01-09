@@ -7,9 +7,9 @@
  * - Handles first-time name setup flow
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase, signInWithDiscord, signOut } from '@/lib/supabase'
-import type { User } from '@supabase/supabase-js'
+import type { User, Session } from '@supabase/supabase-js'
 import type { Player } from '@/types'
 
 interface AuthState {
@@ -34,6 +34,8 @@ export function useAuth(): UseAuthReturn {
     loading: true,
     needsSetup: false,
   })
+  
+  const initialized = useRef(false)
 
   // Extract Discord info from user metadata
   const discordUsername = state.user?.user_metadata?.full_name || 
@@ -42,28 +44,45 @@ export function useAuth(): UseAuthReturn {
                           null
   const discordAvatar = state.user?.user_metadata?.avatar_url || null
 
-  // Check if user has a player record
-  const fetchPlayer = useCallback(async (userId: string) => {
-    const { data: player, error } = await supabase
-      .from('players')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
+  // Handle session update (used by both initial load and auth changes)
+  const handleSession = useCallback(async (session: Session | null) => {
+    if (session?.user) {
+      // Fetch player record
+      const { data: player, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single()
 
-    if (error && error.code !== 'PGRST116') {
-      // PGRST116 = no rows found (expected for new users)
-      console.error('Error fetching player:', error)
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching player:', error)
+      }
+
+      setState({
+        user: session.user,
+        player: player as Player | null,
+        loading: false,
+        needsSetup: !player,
+      })
+    } else {
+      setState({
+        user: null,
+        player: null,
+        loading: false,
+        needsSetup: false,
+      })
     }
-
-    return player as Player | null
   }, [])
 
   // Initialize auth state
   useEffect(() => {
+    // Prevent double initialization in React Strict Mode
+    if (initialized.current) return
+    initialized.current = true
+
     // Check if Supabase is configured
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
-      // No Supabase, skip auth
       setState({
         user: null,
         player: null,
@@ -73,72 +92,14 @@ export function useAuth(): UseAuthReturn {
       return
     }
 
-    // Timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      setState(prev => {
-        if (prev.loading) {
-          console.warn('Auth timeout - stopping loading state')
-          return { ...prev, loading: false }
-        }
-        return prev
-      })
-    }, 5000)
-
-    // Get initial session
-    supabase.auth.getSession()
-      .then(async ({ data: { session }, error }) => {
-        clearTimeout(timeout)
-        
-        if (error) {
-          console.error('Error getting session:', error)
-          setState({
-            user: null,
-            player: null,
-            loading: false,
-            needsSetup: false,
-          })
-          return
-        }
-
-        if (session?.user) {
-          const player = await fetchPlayer(session.user.id)
-          setState({
-            user: session.user,
-            player,
-            loading: false,
-            needsSetup: !player,
-          })
-        } else {
-          setState({
-            user: null,
-            player: null,
-            loading: false,
-            needsSetup: false,
-          })
-        }
-      })
-      .catch((err) => {
-        clearTimeout(timeout)
-        console.error('Auth error:', err)
-        setState({
-          user: null,
-          player: null,
-          loading: false,
-          needsSetup: false,
-        })
-      })
-
-    // Listen for auth changes
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const player = await fetchPlayer(session.user.id)
-          setState({
-            user: session.user,
-            player,
-            loading: false,
-            needsSetup: !player,
-          })
+        console.log('Auth event:', event)
+        
+        // Handle all relevant events
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await handleSession(session)
         } else if (event === 'SIGNED_OUT') {
           setState({
             user: null,
@@ -150,11 +111,36 @@ export function useAuth(): UseAuthReturn {
       }
     )
 
+    // Then get the initial session (this triggers INITIAL_SESSION event)
+    supabase.auth.getSession().then(({ error }) => {
+      if (error) {
+        console.error('Error getting session:', error)
+        setState({
+          user: null,
+          player: null,
+          loading: false,
+          needsSetup: false,
+        })
+      }
+      // Note: The actual session handling is done by onAuthStateChange INITIAL_SESSION
+    })
+
+    // Failsafe timeout - if nothing happens in 3 seconds, stop loading
+    const timeout = setTimeout(() => {
+      setState(prev => {
+        if (prev.loading) {
+          console.warn('Auth failsafe timeout triggered')
+          return { ...prev, loading: false }
+        }
+        return prev
+      })
+    }, 3000)
+
     return () => {
       clearTimeout(timeout)
       subscription.unsubscribe()
     }
-  }, [fetchPlayer])
+  }, [handleSession])
 
   // Login handler
   const login = useCallback(async () => {
@@ -177,7 +163,6 @@ export function useAuth(): UseAuthReturn {
   }, [])
 
   // Setup player profile (first-time setup)
-  // If a player with this name exists but isn't linked to a user, claim it
   const setupPlayer = useCallback(async (displayName: string) => {
     if (!state.user) {
       throw new Error('Must be logged in to setup player')
@@ -198,7 +183,7 @@ export function useAuth(): UseAuthReturn {
     if (existingPlayer) {
       // Player exists - check if it's unclaimed (no user_id)
       if (!existingPlayer.user_id) {
-        // Claim this player - link to current user
+        // Claim this player
         const { data: claimedPlayer, error: claimError } = await supabase
           .from('players')
           .update({ 
@@ -220,12 +205,11 @@ export function useAuth(): UseAuthReturn {
         }))
         return
       } else {
-        // Player is already claimed by another user
         throw new Error('This name is already taken. Please choose another.')
       }
     }
 
-    // No existing player, create new one
+    // Create new player
     const { data: player, error } = await supabase
       .from('players')
       .insert({
@@ -238,7 +222,6 @@ export function useAuth(): UseAuthReturn {
       .single()
 
     if (error) {
-      // Check for duplicate name (race condition)
       if (error.code === '23505') {
         throw new Error('This name is already taken. Please choose another.')
       }
@@ -262,12 +245,7 @@ export function useAuth(): UseAuthReturn {
   }
 }
 
-// Generate a random player color (matches bingo board colors)
 function getRandomColor(): string {
-  const colors = [
-    '#9b59b6', // Purple
-    '#e74c3c', // Red
-    '#5dade2', // Blue
-  ]
+  const colors = ['#9b59b6', '#e74c3c', '#5dade2']
   return colors[Math.floor(Math.random() * colors.length)]
 }
