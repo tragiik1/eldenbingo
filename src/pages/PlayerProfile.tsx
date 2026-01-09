@@ -16,7 +16,7 @@ import type { PlayerAchievement } from '@/types'
 export function PlayerProfile() {
   const { id } = useParams<{ id: string }>()
   const { player: currentPlayer } = useAuthContext()
-  const { player, matches, stats, achievements, headToHead, loading, error } = usePlayerProfile(id)
+  const { player, matches, stats, achievements, headToHead, loading, error, refetch } = usePlayerProfile(id)
 
   const isOwnProfile = currentPlayer?.id === id
 
@@ -70,15 +70,26 @@ export function PlayerProfile() {
           </div>
 
           {/* Name & basic stats */}
-          <div className="text-center md:text-left">
-            <h1 className="font-heading text-3xl md:text-4xl text-parchment-100 mb-2">
-              {player.name}
+          <div className="text-center md:text-left flex-1">
+            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+              <h1 className="font-heading text-3xl md:text-4xl text-parchment-100">
+                {player.name}
+              </h1>
               {isOwnProfile && (
-                <span className="ml-3 text-sm font-ui text-gold-400 bg-gold-600/20 px-2 py-1 rounded">
+                <span className="text-sm font-ui text-gold-400 bg-gold-600/20 px-2 py-1 rounded">
                   You
                 </span>
               )}
-            </h1>
+              <button
+                onClick={refetch}
+                className="p-2 text-shadow-500 hover:text-parchment-300 hover:bg-shadow-800 rounded-md transition-colors"
+                title="Refresh stats"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
             <p className="text-parchment-400">
               {stats.totalMatches} matches played · {stats.wins} wins
             </p>

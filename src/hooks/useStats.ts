@@ -8,7 +8,7 @@
  * - Win streaks
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { parseTimeToMinutes } from '@/lib/utils'
 import type { MatchWithDetails } from '@/types'
@@ -40,10 +40,11 @@ export interface Stats {
   matchDurationStats: MatchDurationStats
   loading: boolean
   error: string | null
+  refetch: () => void
 }
 
 export function useStats(): Stats {
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState<Omit<Stats, 'refetch'>>({
     totalHours: 0,
     totalMatches: 0,
     playerStats: [],
@@ -57,57 +58,59 @@ export function useStats(): Stats {
     error: null,
   })
 
-  useEffect(() => {
-    async function fetchAndCalculateStats() {
-      try {
-        // Check if Supabase is configured
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-        
-        let allMatches: MatchWithDetails[] = []
-        
-        if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
-          // Use localStorage matches
-          const localMatches = JSON.parse(localStorage.getItem('eldenbingo_matches') || '[]')
-          allMatches = localMatches
-        } else {
-          // Fetch all matches from Supabase
-          const { data, error } = await supabase
-            .from('matches')
-            .select(`
+  const fetchAndCalculateStats = useCallback(async () => {
+    setStats(prev => ({ ...prev, loading: true, error: null }))
+    
+    try {
+      // Check if Supabase is configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      
+      let allMatches: MatchWithDetails[] = []
+      
+      if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
+        // Use localStorage matches
+        const localMatches = JSON.parse(localStorage.getItem('eldenbingo_matches') || '[]')
+        allMatches = localMatches
+      } else {
+        // Fetch all matches from Supabase
+        const { data, error } = await supabase
+          .from('matches')
+          .select(`
+            *,
+            board:boards(*),
+            match_players(
               *,
-              board:boards(*),
-              match_players(
-                *,
-                player:players(*)
-              )
-            `)
-            .order('played_at', { ascending: false })
+              player:players(*)
+            )
+          `)
+          .order('played_at', { ascending: false })
 
-          if (error) throw error
-          allMatches = (data || []) as MatchWithDetails[]
-        }
-
-        // Calculate stats
-        const calculated = calculateStats(allMatches)
-        setStats({
-          ...calculated,
-          loading: false,
-          error: null,
-        })
-      } catch (err) {
-        console.error('Error calculating stats:', err)
-        setStats(prev => ({
-          ...prev,
-          loading: false,
-          error: err instanceof Error ? err.message : 'Failed to calculate stats',
-        }))
+        if (error) throw error
+        allMatches = (data || []) as MatchWithDetails[]
       }
-    }
 
-    fetchAndCalculateStats()
+      // Calculate stats
+      const calculated = calculateStats(allMatches)
+      setStats({
+        ...calculated,
+        loading: false,
+        error: null,
+      })
+    } catch (err) {
+      console.error('Error calculating stats:', err)
+      setStats(prev => ({
+        ...prev,
+        loading: false,
+        error: err instanceof Error ? err.message : 'Failed to calculate stats',
+      }))
+    }
   }, [])
 
-  return stats
+  useEffect(() => {
+    fetchAndCalculateStats()
+  }, [fetchAndCalculateStats])
+
+  return { ...stats, refetch: fetchAndCalculateStats }
 }
 
 function calculateStats(matches: MatchWithDetails[]): Omit<Stats, 'loading' | 'error'> {

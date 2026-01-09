@@ -74,29 +74,43 @@ export function EditMatchModal({ match, isOpen, onClose, onSave }: EditMatchModa
         })
         .eq('id', match.id)
 
-      if (matchError) throw matchError
+      if (matchError) {
+        console.error('Match update error:', matchError)
+        throw matchError
+      }
 
       // Update each player
       for (const player of players) {
         // Update player name if changed
         const originalPlayer = match.match_players.find(mp => mp.id === player.id)
         if (originalPlayer && originalPlayer.player.name !== player.name) {
-          await supabase
+          const { error: playerNameError } = await supabase
             .from('players')
             .update({ name: player.name })
             .eq('id', player.player_id)
+          
+          if (playerNameError) {
+            console.error('Player name update error:', playerNameError)
+            throw playerNameError
+          }
         }
 
         // Update match_player record (color, is_winner)
-        await supabase
+        const { error: matchPlayerError } = await supabase
           .from('match_players')
           .update({
             color: player.color,
             is_winner: player.is_winner,
           })
           .eq('id', player.match_player_id)
+        
+        if (matchPlayerError) {
+          console.error('Match player update error:', matchPlayerError)
+          throw matchPlayerError
+        }
       }
 
+      console.log('[EditMatchModal] Save successful, refreshing...')
       onSave()
       onClose()
     } catch (err) {

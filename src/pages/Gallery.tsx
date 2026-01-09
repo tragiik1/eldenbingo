@@ -16,7 +16,7 @@ import { formatDateShort } from '@/lib/utils'
 import type { MatchWithDetails } from '@/types'
 
 export function Gallery() {
-  const { matches, loading, hasMore, loadMore } = useMatches({ limit: 12 })
+  const { matches, loading, hasMore, loadMore, refresh } = useMatches({ limit: 12 })
   const [selectedMatch, setSelectedMatch] = useState<MatchWithDetails | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -68,9 +68,20 @@ export function Gallery() {
           transition={{ duration: 0.5 }}
           className="text-center mb-10 md:mb-14"
         >
-          <h1 className="font-heading text-2xl md:text-3xl text-parchment-100 mb-2">
-            Gallery
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <h1 className="font-heading text-2xl md:text-3xl text-parchment-100">
+              Gallery
+            </h1>
+            <button
+              onClick={refresh}
+              className="p-2 text-shadow-500 hover:text-parchment-300 hover:bg-shadow-800 rounded-md transition-colors"
+              title="Refresh gallery"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
           <p className="text-sm text-parchment-400 font-ui">
             Browse all archived boards
           </p>

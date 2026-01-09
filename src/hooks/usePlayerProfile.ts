@@ -2,7 +2,7 @@
  * Hook for fetching player profile data and calculating achievements
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { parseTimeToMinutes } from '@/lib/utils'
 import { ACHIEVEMENTS, type Player, type MatchWithDetails, type PlayerAchievement } from '@/types'
@@ -31,10 +31,11 @@ export interface PlayerProfile {
   }>
   loading: boolean
   error: string | null
+  refetch: () => void
 }
 
 export function usePlayerProfile(playerId: string | undefined): PlayerProfile {
-  const [profile, setProfile] = useState<PlayerProfile>({
+  const [profile, setProfile] = useState<Omit<PlayerProfile, 'refetch'>>({
     player: null,
     matches: [],
     stats: {
@@ -55,86 +56,88 @@ export function usePlayerProfile(playerId: string | undefined): PlayerProfile {
     error: null,
   })
 
-  useEffect(() => {
+  const fetchProfile = useCallback(async () => {
     if (!playerId) {
       setProfile(prev => ({ ...prev, loading: false, error: 'No player ID' }))
       return
     }
 
-    async function fetchProfile() {
-      try {
-        // Check Supabase config
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-        if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
-          // Demo mode - show empty profile
-          setProfile(prev => ({
-            ...prev,
-            loading: false,
-            error: 'Demo mode - no profile data',
-          }))
-          return
-        }
+    setProfile(prev => ({ ...prev, loading: true, error: null }))
 
-        // Fetch player
-        const { data: player, error: playerError } = await supabase
-          .from('players')
-          .select('*')
-          .eq('id', playerId)
-          .single()
-
-        if (playerError) throw playerError
-
-        // Fetch all matches this player participated in
-        const { data: matchPlayers, error: matchPlayersError } = await supabase
-          .from('match_players')
-          .select(`
-            *,
-            match:matches(
-              *,
-              board:boards(*),
-              match_players(
-                *,
-                player:players(*)
-              )
-            )
-          `)
-          .eq('player_id', playerId)
-          .order('created_at', { ascending: false })
-
-        if (matchPlayersError) throw matchPlayersError
-
-        // Extract matches and calculate stats
-        const matches = matchPlayers
-          .map(mp => mp.match as MatchWithDetails)
-          .filter(Boolean)
-
-        const stats = calculateStats(matches, matchPlayers)
-        const achievements = calculateAchievements(matchPlayers, stats)
-        const headToHead = calculateHeadToHead(playerId!, matches)
-
-        setProfile({
-          player: player as Player,
-          matches,
-          stats,
-          achievements,
-          headToHead,
-          loading: false,
-          error: null,
-        })
-      } catch (err) {
-        console.error('Error fetching player profile:', err)
+    try {
+      // Check Supabase config
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
+        // Demo mode - show empty profile
         setProfile(prev => ({
           ...prev,
           loading: false,
-          error: err instanceof Error ? err.message : 'Failed to load profile',
+          error: 'Demo mode - no profile data',
         }))
+        return
       }
-    }
 
-    fetchProfile()
+      // Fetch player
+      const { data: player, error: playerError } = await supabase
+        .from('players')
+        .select('*')
+        .eq('id', playerId)
+        .single()
+
+      if (playerError) throw playerError
+
+      // Fetch all matches this player participated in
+      const { data: matchPlayers, error: matchPlayersError } = await supabase
+        .from('match_players')
+        .select(`
+          *,
+          match:matches(
+            *,
+            board:boards(*),
+            match_players(
+              *,
+              player:players(*)
+            )
+          )
+        `)
+        .eq('player_id', playerId)
+        .order('created_at', { ascending: false })
+
+      if (matchPlayersError) throw matchPlayersError
+
+      // Extract matches and calculate stats
+      const matches = matchPlayers
+        .map(mp => mp.match as MatchWithDetails)
+        .filter(Boolean)
+
+      const stats = calculateStats(matches, matchPlayers)
+      const achievements = calculateAchievements(matchPlayers, stats)
+      const headToHead = calculateHeadToHead(playerId!, matches)
+
+      setProfile({
+        player: player as Player,
+        matches,
+        stats,
+        achievements,
+        headToHead,
+        loading: false,
+        error: null,
+      })
+    } catch (err) {
+      console.error('Error fetching player profile:', err)
+      setProfile(prev => ({
+        ...prev,
+        loading: false,
+        error: err instanceof Error ? err.message : 'Failed to load profile',
+      }))
+    }
   }, [playerId])
 
-  return profile
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  return { ...profile, refetch: fetchProfile }
 }
 
 function calculateStats(

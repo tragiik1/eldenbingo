@@ -16,7 +16,7 @@ import { PageLoader } from '@/components/ui/LoadingSpinner'
 import { OutcomeBadge } from '@/components/ui/OutcomeBadge'
 
 export function Stats() {
-  const { totalMatches, playerStats, matchDurationStats, loading, error } = useStats()
+  const { totalMatches, playerStats, matchDurationStats, loading, error, refetch } = useStats()
 
   if (loading) {
     return <PageLoader />
@@ -30,6 +30,9 @@ export function Stats() {
             Error Loading Stats
           </h1>
           <p className="text-shadow-500">{error}</p>
+          <button onClick={refetch} className="btn-secondary mt-4">
+            Try Again
+          </button>
         </div>
       </div>
     )
@@ -45,9 +48,20 @@ export function Stats() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="font-heading text-3xl md:text-4xl text-parchment-100 mb-4">
-            Statistics
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <h1 className="font-heading text-3xl md:text-4xl text-parchment-100">
+              Statistics
+            </h1>
+            <button
+              onClick={refetch}
+              className="p-2 text-shadow-500 hover:text-parchment-300 hover:bg-shadow-800 rounded-md transition-colors"
+              title="Refresh stats"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
           <p className="text-parchment-400 font-body">
             Comprehensive stats from all archived matches
           </p>
