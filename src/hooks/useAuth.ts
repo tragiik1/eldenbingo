@@ -60,25 +60,59 @@ export function useAuth(): UseAuthReturn {
 
   // Initialize auth state
   useEffect(() => {
+    // Check if Supabase is configured
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
+      // No Supabase, skip auth
+      setState({
+        user: null,
+        player: null,
+        loading: false,
+        needsSetup: false,
+      })
+      return
+    }
+
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const player = await fetchPlayer(session.user.id)
-        setState({
-          user: session.user,
-          player,
-          loading: false,
-          needsSetup: !player,
-        })
-      } else {
+    supabase.auth.getSession()
+      .then(async ({ data: { session }, error }) => {
+        if (error) {
+          console.error('Error getting session:', error)
+          setState({
+            user: null,
+            player: null,
+            loading: false,
+            needsSetup: false,
+          })
+          return
+        }
+
+        if (session?.user) {
+          const player = await fetchPlayer(session.user.id)
+          setState({
+            user: session.user,
+            player,
+            loading: false,
+            needsSetup: !player,
+          })
+        } else {
+          setState({
+            user: null,
+            player: null,
+            loading: false,
+            needsSetup: false,
+          })
+        }
+      })
+      .catch((err) => {
+        console.error('Auth error:', err)
         setState({
           user: null,
           player: null,
           loading: false,
           needsSetup: false,
         })
-      }
-    })
+      })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
