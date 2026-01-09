@@ -44,25 +44,53 @@ export function useAuth(): UseAuthReturn {
 
   // Handle session update (used by both initial load and auth changes)
   const handleSession = useCallback(async (session: Session | null) => {
+    console.log('Auth: handleSession called, user:', session?.user?.id ? 'yes' : 'no')
+    
     if (session?.user) {
-      // Fetch player record
-      const { data: player, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single()
+      try {
+        // Fetch player record with timeout
+        console.log('Auth: Fetching player...')
+        const playerPromise = supabase
+          .from('players')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single()
+        
+        // Race against a 3 second timeout
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Player fetch timeout')), 3000)
+        )
+        
+        let player = null
+        try {
+          const result = await Promise.race([playerPromise, timeoutPromise]) as { data: Player | null, error: unknown }
+          player = result.data
+          if (result.error && (result.error as { code?: string }).code !== 'PGRST116') {
+            console.error('Error fetching player:', result.error)
+          }
+        } catch (fetchErr) {
+          console.warn('Auth: Player fetch failed/timeout:', fetchErr)
+          // Continue without player - user can still use the site
+        }
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching player:', error)
+        console.log('Auth: Setting state, player:', player ? 'yes' : 'no')
+        setState({
+          user: session.user,
+          player: player as Player | null,
+          loading: false,
+          needsSetup: !player,
+        })
+      } catch (err) {
+        console.error('Auth: handleSession error:', err)
+        setState({
+          user: session.user,
+          player: null,
+          loading: false,
+          needsSetup: true,
+        })
       }
-
-      setState({
-        user: session.user,
-        player: player as Player | null,
-        loading: false,
-        needsSetup: !player,
-      })
     } else {
+      console.log('Auth: No session, setting logged out state')
       setState({
         user: null,
         player: null,
