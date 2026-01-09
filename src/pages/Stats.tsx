@@ -272,11 +272,11 @@ export function Stats() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex flex-col items-end gap-0.5">
                             {player.currentStreak > 0 ? (
-                              <span className="inline-flex items-center gap-1.5 font-ui font-medium text-gold-400">
+                              <span className="inline-flex items-center gap-2 font-ui font-medium text-gold-400 text-lg">
                                 <img 
                                   src="/messmer-flame.png" 
                                   alt="" 
-                                  className="w-7 h-7 object-contain"
+                                  className="w-[70px] h-[70px] object-contain -my-4"
                                 />
                                 {player.currentStreak}
                               </span>
