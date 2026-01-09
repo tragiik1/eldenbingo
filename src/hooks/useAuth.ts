@@ -4,13 +4,54 @@
  * Manages Discord OAuth login and player profile setup.
  * - Tracks auth state
  * - Links auth user to player record
- * - Handles first-time name setup flow
+ * - Caches player data locally for fast restore
  */
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, signInWithDiscord, signOut } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 import type { Player } from '@/types'
+
+// Local storage keys for caching
+const PLAYER_CACHE_KEY = 'eldenbingo-player'
+const PLAYER_CACHE_EXPIRY = 30 * 24 * 60 * 60 * 1000 // 30 days
+
+interface CachedPlayer {
+  player: Player
+  cachedAt: number
+}
+
+// Get cached player from localStorage
+function getCachedPlayer(): Player | null {
+  try {
+    const cached = localStorage.getItem(PLAYER_CACHE_KEY)
+    if (!cached) return null
+    
+    const { player, cachedAt } = JSON.parse(cached) as CachedPlayer
+    
+    // Check if cache is still valid (30 days)
+    if (Date.now() - cachedAt > PLAYER_CACHE_EXPIRY) {
+      localStorage.removeItem(PLAYER_CACHE_KEY)
+      return null
+    }
+    
+    return player
+  } catch {
+    return null
+  }
+}
+
+// Cache player to localStorage
+function cachePlayer(player: Player | null) {
+  if (player) {
+    localStorage.setItem(PLAYER_CACHE_KEY, JSON.stringify({
+      player,
+      cachedAt: Date.now(),
+    }))
+  } else {
+    localStorage.removeItem(PLAYER_CACHE_KEY)
+  }
+}
 
 interface AuthState {
   user: User | null
@@ -42,63 +83,85 @@ export function useAuth(): UseAuthReturn {
                           null
   const discordAvatar = state.user?.user_metadata?.avatar_url || null
 
-  // Handle session update (used by both initial load and auth changes)
-  const handleSession = useCallback(async (session: Session | null) => {
-    console.log('Auth: handleSession called, user:', session?.user?.id ? 'yes' : 'no')
-    
-    if (session?.user) {
-      try {
-        // Fetch player record with timeout
-        console.log('Auth: Fetching player...')
-        const playerPromise = supabase
-          .from('players')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-        
-        // Race against a 3 second timeout
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Player fetch timeout')), 3000)
-        )
-        
-        let player = null
-        try {
-          const result = await Promise.race([playerPromise, timeoutPromise]) as { data: Player | null, error: unknown }
-          player = result.data
-          if (result.error && (result.error as { code?: string }).code !== 'PGRST116') {
-            console.error('Error fetching player:', result.error)
-          }
-        } catch (fetchErr) {
-          console.warn('Auth: Player fetch failed/timeout:', fetchErr)
-          // Continue without player - user can still use the site
-        }
-
-        console.log('Auth: Setting state, player:', player ? 'yes' : 'no')
-        setState({
-          user: session.user,
-          player: player as Player | null,
-          loading: false,
-          needsSetup: !player,
-        })
-      } catch (err) {
-        console.error('Auth: handleSession error:', err)
-        setState({
-          user: session.user,
-          player: null,
-          loading: false,
-          needsSetup: true,
-        })
+  // Fetch player from database
+  const fetchPlayer = useCallback(async (userId: string): Promise<Player | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching player:', error)
       }
-    } else {
-      console.log('Auth: No session, setting logged out state')
+      
+      return data as Player | null
+    } catch (err) {
+      console.error('Exception fetching player:', err)
+      return null
+    }
+  }, [])
+
+  // Handle session update
+  const handleSession = useCallback(async (session: Session | null, isInitial: boolean = false) => {
+    if (!session?.user) {
+      // Not logged in
+      cachePlayer(null)
       setState({
         user: null,
         player: null,
         loading: false,
         needsSetup: false,
       })
+      return
     }
-  }, [])
+
+    // User is logged in
+    const cachedPlayer = getCachedPlayer()
+    
+    // If we have cached player data, use it immediately (no loading state for returning users)
+    if (cachedPlayer && isInitial) {
+      setState({
+        user: session.user,
+        player: cachedPlayer,
+        loading: false,
+        needsSetup: false,
+      })
+      
+      // Refresh player data in background (don't await)
+      fetchPlayer(session.user.id).then(freshPlayer => {
+        if (freshPlayer) {
+          cachePlayer(freshPlayer)
+          setState(prev => ({
+            ...prev,
+            player: freshPlayer,
+          }))
+        }
+      })
+      return
+    }
+
+    // No cache - need to fetch from DB
+    setState(prev => ({
+      ...prev,
+      user: session.user,
+      loading: true,
+    }))
+
+    const player = await fetchPlayer(session.user.id)
+    
+    if (player) {
+      cachePlayer(player)
+    }
+    
+    setState({
+      user: session.user,
+      player,
+      loading: false,
+      needsSetup: !player,
+    })
+  }, [fetchPlayer])
 
   // Initialize auth state
   useEffect(() => {
@@ -114,94 +177,83 @@ export function useAuth(): UseAuthReturn {
       return
     }
 
-    console.log('Auth: Initializing...')
+    let mounted = true
 
-    // Just get the session directly - simpler approach
     const initAuth = async () => {
       try {
-        console.log('Auth: Getting session...')
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('Auth: Session error:', error)
+          console.error('Auth session error:', error)
+          if (mounted) {
+            setState({
+              user: null,
+              player: null,
+              loading: false,
+              needsSetup: false,
+            })
+          }
+          return
+        }
+        
+        if (mounted) {
+          await handleSession(session, true) // true = initial load
+        }
+      } catch (err) {
+        console.error('Auth init error:', err)
+        if (mounted) {
           setState({
             user: null,
             player: null,
             loading: false,
             needsSetup: false,
           })
-          return
         }
-        
-        console.log('Auth: Session result:', session ? 'logged in' : 'not logged in')
-        await handleSession(session)
-      } catch (err) {
-        console.error('Auth: Exception:', err)
-        setState({
-          user: null,
-          player: null,
-          loading: false,
-          needsSetup: false,
-        })
       }
     }
     
     initAuth()
 
-    // Set up auth state listener for future changes
+    // Listen for auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth event:', event)
+        if (!mounted) return
         
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await handleSession(session)
+        if (event === 'SIGNED_IN') {
+          await handleSession(session, false)
         } else if (event === 'SIGNED_OUT') {
+          cachePlayer(null)
           setState({
             user: null,
             player: null,
             loading: false,
             needsSetup: false,
           })
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          // Just update user, keep player
+          setState(prev => ({
+            ...prev,
+            user: session.user,
+          }))
         }
-        // Ignore INITIAL_SESSION since we handle it manually above
       }
     )
 
-    // Failsafe timeout - if nothing happens in 5 seconds, stop loading
-    const timeout = setTimeout(() => {
-      setState(prev => {
-        if (prev.loading) {
-          console.warn('Auth failsafe timeout triggered')
-          return { ...prev, loading: false }
-        }
-        return prev
-      })
-    }, 5000)
-
     return () => {
-      clearTimeout(timeout)
+      mounted = false
       subscription.unsubscribe()
     }
   }, [handleSession])
 
   // Login handler
   const login = useCallback(async () => {
-    try {
-      await signInWithDiscord()
-    } catch (err) {
-      console.error('Login failed:', err)
-      throw err
-    }
+    await signInWithDiscord()
   }, [])
 
   // Logout handler
   const logout = useCallback(async () => {
-    try {
-      await signOut()
-    } catch (err) {
-      console.error('Logout failed:', err)
-      throw err
-    }
+    cachePlayer(null) // Clear cache on logout
+    await signOut()
   }, [])
 
   // Setup player profile (first-time setup)
@@ -240,9 +292,11 @@ export function useAuth(): UseAuthReturn {
           throw claimError
         }
 
+        const player = claimedPlayer as Player
+        cachePlayer(player)
         setState(prev => ({
           ...prev,
-          player: claimedPlayer as Player,
+          player,
           needsSetup: false,
         }))
         return
@@ -270,9 +324,11 @@ export function useAuth(): UseAuthReturn {
       throw error
     }
 
+    const newPlayer = player as Player
+    cachePlayer(newPlayer)
     setState(prev => ({
       ...prev,
-      player: player as Player,
+      player: newPlayer,
       needsSetup: false,
     }))
   }, [state.user, discordAvatar])
@@ -288,6 +344,6 @@ export function useAuth(): UseAuthReturn {
 }
 
 function getRandomColor(): string {
-  const colors = ['#9b59b6', '#e74c3c', '#5dade2']
+  const colors = ['#9b59b6', '#e74c3c', '#5dade2', '#2ecc71']
   return colors[Math.floor(Math.random() * colors.length)]
 }
