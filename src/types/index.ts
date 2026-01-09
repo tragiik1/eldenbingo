@@ -128,6 +128,7 @@ export const PLAYER_COLORS = [
   { name: 'Purple', value: '#9b59b6' },
   { name: 'Red', value: '#e74c3c' },
   { name: 'Blue', value: '#5dade2' },
+  { name: 'Green', value: '#2ecc71' },
 ] as const;
 
 // Optional match tags

@@ -844,17 +844,17 @@ function PlayersStep(props: PlayersStepProps) {
             {/* Color picker - compact horizontal buttons */}
             <div className="flex items-center gap-3">
               <span className="text-xs text-shadow-500 font-ui shrink-0">Color</span>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 {PLAYER_COLORS.map((c) => (
                   <button
                     key={c.value}
                     type="button"
                     onClick={() => props.updatePlayer(player.id, { color: c.value })}
                     className={cn(
-                      'w-4 h-4 rounded-full transition-all duration-200 flex items-center justify-center',
+                      'w-5 h-5 rounded-full transition-all duration-200',
                       player.color === c.value 
-                        ? 'ring-2 ring-offset-2 ring-offset-shadow-900 ring-parchment-300 scale-125' 
-                        : 'opacity-50 hover:opacity-100 hover:scale-110'
+                        ? 'ring-1 ring-offset-1 ring-offset-shadow-900 ring-parchment-400 scale-110' 
+                        : 'opacity-50 hover:opacity-100 hover:scale-105'
                     )}
                     style={{ backgroundColor: c.value }}
                     title={c.name}
@@ -868,7 +868,7 @@ function PlayersStep(props: PlayersStepProps) {
       </div>
 
       {/* Add player button */}
-      {props.players.length < 3 && (
+      {props.players.length < 4 && (
         <button
           type="button"
           onClick={props.addPlayer}

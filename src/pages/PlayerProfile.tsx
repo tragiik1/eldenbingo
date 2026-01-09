@@ -94,7 +94,7 @@ export function PlayerProfile() {
         >
           <StatCard label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} highlight />
           <StatCard label="Total Wins" value={stats.wins.toString()} />
-          <StatCard label="Current Streak" value={stats.currentStreak > 0 ? stats.currentStreak.toString() : '—'} highlight={stats.currentStreak > 0} />
+          <StatCard label="Current Streak" value={stats.currentStreak > 0 ? stats.currentStreak.toString() : '—'} highlight={stats.currentStreak > 0} showFlame={stats.currentStreak > 0} />
           <StatCard label="Best Streak" value={stats.longestStreak.toString()} />
           <StatCard label="Total Time" value={formatTotalTime(stats.totalMinutes)} />
           <StatCard label="Avg Duration" value={formatMinutesToTime(stats.avgMinutes)} />
@@ -262,7 +262,7 @@ export function PlayerProfile() {
   )
 }
 
-function StatCard({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function StatCard({ label, value, highlight = false, showFlame = false }: { label: string; value: string; highlight?: boolean; showFlame?: boolean }) {
   return (
     <div className={cn(
       "card p-4 text-center",
@@ -270,9 +270,14 @@ function StatCard({ label, value, highlight = false }: { label: string; value: s
     )}>
       <p className="text-xs text-shadow-500 uppercase tracking-wider mb-1">{label}</p>
       <p className={cn(
-        "font-heading text-xl",
+        "font-heading text-xl inline-flex items-center justify-center gap-1.5",
         highlight ? "text-gold-400" : "text-parchment-200"
-      )}>{value}</p>
+      )}>
+        {showFlame && (
+          <img src="/messmer-flame.png" alt="" className="w-5 h-5 object-contain" />
+        )}
+        {value}
+      </p>
     </div>
   )
 }

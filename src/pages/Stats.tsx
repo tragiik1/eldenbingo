@@ -271,12 +271,18 @@ export function Stats() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex flex-col items-end gap-0.5">
-                            <span className={cn(
-                              "font-ui font-medium",
-                              player.currentStreak > 0 ? "text-gold-400" : "text-shadow-500"
-                            )}>
-                              {player.currentStreak > 0 ? player.currentStreak : '—'}
-                            </span>
+                            {player.currentStreak > 0 ? (
+                              <span className="inline-flex items-center gap-1 font-ui font-medium text-gold-400">
+                                <img 
+                                  src="/messmer-flame.png" 
+                                  alt="" 
+                                  className="w-4 h-4 object-contain"
+                                />
+                                {player.currentStreak}
+                              </span>
+                            ) : (
+                              <span className="font-ui text-shadow-500">—</span>
+                            )}
                             {player.longestStreak > player.currentStreak && (
                               <span className="text-xs text-shadow-500">
                                 Best: {player.longestStreak}
