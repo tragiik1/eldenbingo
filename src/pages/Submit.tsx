@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase, uploadBoardImage } from '@/lib/supabase'
 import { cn, generateId } from '@/lib/utils'
 import { PLAYER_COLORS, ACCOLADES, type MatchOutcome } from '@/types'
+import { useAuthContext } from '@/contexts/AuthContext'
 
 type Step = 'password' | 'upload' | 'details' | 'players' | 'review'
 
@@ -52,6 +53,7 @@ interface PlayerInput {
 
 export function Submit() {
   const navigate = useNavigate()
+  const { player, loading: authLoading } = useAuthContext()
   const [step, setStep] = useState<Step>('password')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,11 +63,18 @@ export function Submit() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
   // Check if already authenticated on mount
+  // Logged-in users skip password entirely
   useEffect(() => {
-    if (isAuthenticated()) {
+    if (authLoading) return // Wait for auth to load
+    
+    if (player) {
+      // Logged in with Discord - skip password
+      setStep('upload')
+    } else if (isAuthenticated()) {
+      // Has password auth from before
       setStep('upload')
     }
-  }, [])
+  }, [player, authLoading])
 
   // Password verification
   const handlePasswordSubmit = (e: React.FormEvent) => {
