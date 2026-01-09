@@ -699,69 +699,84 @@ function PlayersStep(props: PlayersStepProps) {
       {/* Players list */}
       <div className="space-y-4">
         {props.players.map((player, index) => (
-          <div key={player.id} className="flex gap-3 items-start">
-            {/* Color picker */}
-            <div className="relative">
-              <select
-                value={player.color}
-                onChange={(e) => props.updatePlayer(player.id, { color: e.target.value })}
-                className="appearance-none w-10 h-10 rounded-full cursor-pointer border-2 border-shadow-700"
-                style={{ backgroundColor: player.color }}
-                aria-label="Player color"
-              >
+          <div key={player.id} className="card p-4 space-y-3">
+            {/* Player header with name and remove */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={player.name}
+                  onChange={(e) => props.updatePlayer(player.id, { name: e.target.value })}
+                  placeholder={`Player ${index + 1} name`}
+                  className="input w-full"
+                />
+              </div>
+
+              {/* Winner toggle */}
+              {showWinner && (
+                <button
+                  type="button"
+                  onClick={() => props.setWinner(player.id)}
+                  className={cn(
+                    'px-3 py-2 rounded-md transition-all text-sm font-ui',
+                    player.is_winner
+                      ? 'bg-gold-600/20 text-gold-400 border border-gold-600/40'
+                      : 'bg-shadow-800 text-shadow-500 border border-shadow-700 hover:border-shadow-600'
+                  )}
+                >
+                  {player.is_winner ? 'Winner' : 'Set Winner'}
+                </button>
+              )}
+
+              {/* Remove button */}
+              {props.players.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => props.removePlayer(player.id)}
+                  className="p-2 text-shadow-500 hover:text-red-400 transition-colors"
+                  aria-label="Remove player"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Color picker - horizontal buttons */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-shadow-500 font-ui">Color:</span>
+              <div className="flex gap-2">
                 {PLAYER_COLORS.map((c) => (
-                  <option key={c.value} value={c.value}>{c.name}</option>
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => props.updatePlayer(player.id, { color: c.value })}
+                    className={cn(
+                      'w-8 h-8 rounded-full transition-all flex items-center justify-center',
+                      player.color === c.value 
+                        ? 'ring-2 ring-offset-2 ring-offset-shadow-900 ring-white scale-110' 
+                        : 'opacity-60 hover:opacity-100 hover:scale-105'
+                    )}
+                    style={{ backgroundColor: c.value }}
+                    title={c.name}
+                    aria-label={`Select ${c.name}`}
+                  >
+                    {player.color === c.value && (
+                      <svg className="w-4 h-4 text-white drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
-
-            {/* Name input */}
-            <div className="flex-1">
-              <input
-                type="text"
-                value={player.name}
-                onChange={(e) => props.updatePlayer(player.id, { name: e.target.value })}
-                placeholder={`Player ${index + 1}`}
-                className="input"
-              />
-            </div>
-
-            {/* Winner toggle */}
-            {showWinner && (
-              <button
-                type="button"
-                onClick={() => props.setWinner(player.id)}
-                className={cn(
-                  'p-2.5 rounded-md transition-all',
-                  player.is_winner
-                    ? 'bg-gold-600/20 text-gold-400 border border-gold-600/40'
-                    : 'bg-shadow-800 text-shadow-500 border border-shadow-700 hover:border-shadow-600'
-                )}
-                title={player.is_winner ? 'Winner' : 'Set as winner'}
-              >
-                ✦
-              </button>
-            )}
-
-            {/* Remove button */}
-            {props.players.length > 1 && (
-              <button
-                type="button"
-                onClick={() => props.removePlayer(player.id)}
-                className="p-2.5 text-shadow-500 hover:text-blood-500 transition-colors"
-                aria-label="Remove player"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
           </div>
         ))}
       </div>
 
       {/* Add player button */}
-      {props.players.length < 8 && (
+      {props.players.length < 3 && (
         <button
           type="button"
           onClick={props.addPlayer}
