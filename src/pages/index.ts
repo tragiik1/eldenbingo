@@ -1,0 +1,6 @@
+export { Home } from './Home'
+export { Match } from './Match'
+export { Gallery } from './Gallery'
+export { Submit } from './Submit'
+export { About } from './About'
+export { NotFound } from './NotFound'
