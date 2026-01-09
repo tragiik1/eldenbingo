@@ -274,7 +274,7 @@ function StatCard({ label, value, highlight = false, showFlame = false }: { labe
         highlight ? "text-gold-400" : "text-parchment-200"
       )}>
         {showFlame && (
-          <img src="/messmer-flame.png" alt="" className="w-[70px] h-[70px] object-contain" />
+          <img src="/messmer-flame.png" alt="" className="w-10 h-10 object-contain" />
         )}
         {value}
       </p>

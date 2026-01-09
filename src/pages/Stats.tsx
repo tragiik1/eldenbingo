@@ -276,7 +276,7 @@ export function Stats() {
                                 <img 
                                   src="/messmer-flame.png" 
                                   alt="" 
-                                  className="w-[70px] h-[70px] object-contain -my-4"
+                                  className="w-10 h-10 object-contain -my-2"
                                 />
                                 {player.currentStreak}
                               </span>
