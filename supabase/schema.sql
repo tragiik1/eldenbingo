@@ -177,6 +177,7 @@ CREATE POLICY "Public insert access" ON comments FOR INSERT WITH CHECK (true);
 -- Everyone can update (trust-based system)
 CREATE POLICY "Public update access" ON players FOR UPDATE USING (true);
 CREATE POLICY "Public update access" ON matches FOR UPDATE USING (true);
+CREATE POLICY "Public update access" ON match_players FOR UPDATE USING (true);
 CREATE POLICY "Public update access" ON comments FOR UPDATE USING (true);
 
 -- ============================================

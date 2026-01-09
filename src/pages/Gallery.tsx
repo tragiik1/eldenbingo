@@ -151,18 +151,18 @@ function GalleryItem({ match, index, onClick }: GalleryItemProps) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: index * 0.04 }}
       onClick={onClick}
-      className="group relative aspect-square overflow-hidden rounded-lg bg-shadow-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/40"
+      className="group relative aspect-square overflow-hidden rounded-lg bg-shadow-900 p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500/40"
     >
       {/* Placeholder */}
       {!isLoaded && (
-        <div className="absolute inset-0 bg-shadow-800 animate-pulse" />
+        <div className="absolute inset-2 bg-shadow-800 animate-pulse rounded-sm" />
       )}
 
       {/* Image */}
       <img
         src={match.board.image_url}
         alt={match.title}
-        className={`w-full h-full object-cover transition-all duration-400 ease-out group-hover:scale-[1.03] ${
+        className={`w-full h-full object-contain rounded-sm transition-all duration-400 ease-out group-hover:scale-[1.02] ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         loading="lazy"
@@ -232,11 +232,11 @@ function Lightbox({ match, onClose }: LightboxProps) {
         </button>
 
         {/* Image */}
-        <div className="relative overflow-hidden bg-shadow-900 border border-shadow-800/60 shadow-glow-strong">
+        <div className="relative overflow-hidden bg-shadow-900 border border-shadow-800/60 shadow-glow-strong p-3 rounded-sm">
           <img
             src={match.board.image_url}
             alt={match.title}
-            className="w-full"
+            className="w-full rounded-sm"
           />
         </div>
 

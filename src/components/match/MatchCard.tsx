@@ -31,12 +31,12 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
         className="block card overflow-hidden"
       >
         {/* Board image with overlay */}
-        <div className="relative aspect-square overflow-hidden bg-shadow-900">
+        <div className="relative aspect-square overflow-hidden bg-shadow-900 p-2">
           {/* Board image */}
           <img
             src={match.board.image_url}
             alt={`Board for ${match.title}`}
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+            className="w-full h-full object-contain rounded-sm transition-transform duration-500 ease-out group-hover:scale-[1.02]"
             loading="lazy"
           />
           
