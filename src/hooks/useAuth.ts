@@ -92,12 +92,14 @@ export function useAuth(): UseAuthReturn {
       return
     }
 
-    // Set up auth state listener FIRST
+    let sessionHandled = false
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth event:', event)
+        sessionHandled = true
         
-        // Handle all relevant events
         if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await handleSession(session)
         } else if (event === 'SIGNED_OUT') {
@@ -111,21 +113,33 @@ export function useAuth(): UseAuthReturn {
       }
     )
 
-    // Then get the initial session (this triggers INITIAL_SESSION event)
-    supabase.auth.getSession().then(({ error }) => {
-      if (error) {
-        console.error('Error getting session:', error)
-        setState({
-          user: null,
-          player: null,
-          loading: false,
-          needsSetup: false,
-        })
+    // Manually get session as backup (in case INITIAL_SESSION doesn't fire)
+    const checkSession = async () => {
+      // Wait a bit to see if onAuthStateChange fires first
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      if (!sessionHandled) {
+        console.log('Auth: Manual session check (event did not fire)')
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Error getting session:', error)
+          setState({
+            user: null,
+            player: null,
+            loading: false,
+            needsSetup: false,
+          })
+          return
+        }
+        
+        await handleSession(session)
       }
-      // Note: The actual session handling is done by onAuthStateChange INITIAL_SESSION
-    })
+    }
+    
+    checkSession()
 
-    // Failsafe timeout - if nothing happens in 3 seconds, stop loading
+    // Failsafe timeout - if nothing happens in 5 seconds, stop loading
     const timeout = setTimeout(() => {
       setState(prev => {
         if (prev.loading) {
@@ -134,7 +148,7 @@ export function useAuth(): UseAuthReturn {
         }
         return prev
       })
-    }, 3000)
+    }, 5000)
 
     return () => {
       clearTimeout(timeout)
