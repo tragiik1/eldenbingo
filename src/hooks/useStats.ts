@@ -33,11 +33,29 @@ export interface MatchDurationStats {
   totalMinutes: number
 }
 
+// Chart data types
+export interface WinsOverTimeDataPoint {
+  date: string
+  [playerName: string]: string | number // date + player names with cumulative wins
+}
+
+export interface MonthlyActivityDataPoint {
+  month: string
+  matches: number
+}
+
+export interface ChartData {
+  winsOverTime: WinsOverTimeDataPoint[]
+  monthlyActivity: MonthlyActivityDataPoint[]
+  playerColors: Record<string, string>
+}
+
 export interface Stats {
   totalHours: number
   totalMatches: number
   playerStats: PlayerStats[]
   matchDurationStats: MatchDurationStats
+  chartData: ChartData
   loading: boolean
   error: string | null
   refetch: () => void
@@ -53,6 +71,11 @@ export function useStats(): Stats {
       shortest: null,
       averageMinutes: 0,
       totalMinutes: 0,
+    },
+    chartData: {
+      winsOverTime: [],
+      monthlyActivity: [],
+      playerColors: {},
     },
     loading: true,
     error: null,
@@ -236,6 +259,9 @@ function calculateStats(matches: MatchWithDetails[]): Omit<Stats, 'loading' | 'e
     return a.playerName.localeCompare(b.playerName)
   })
 
+  // Calculate chart data
+  const chartData = calculateChartData(matches, playerMap)
+
   return {
     totalHours: totalMinutes / 60,
     totalMatches: matches.length,
@@ -246,5 +272,84 @@ function calculateStats(matches: MatchWithDetails[]): Omit<Stats, 'loading' | 'e
       averageMinutes: matchesWithTime > 0 ? totalMinutes / matchesWithTime : 0,
       totalMinutes,
     },
+    chartData,
   }
+}
+
+function calculateChartData(
+  matches: MatchWithDetails[],
+  playerMap: Map<string, PlayerStats>
+): ChartData {
+  // Sort matches by date (oldest first)
+  const sortedMatches = [...matches].sort(
+    (a, b) => new Date(a.played_at).getTime() - new Date(b.played_at).getTime()
+  )
+
+  // Get all player names and colors
+  const playerColors: Record<string, string> = {}
+  playerMap.forEach(player => {
+    playerColors[player.playerName] = player.playerColor
+  })
+
+  // Calculate cumulative wins over time
+  const cumulativeWins: Record<string, number> = {}
+  const winsOverTime: WinsOverTimeDataPoint[] = []
+  
+  // Group matches by date to avoid duplicate dates
+  const matchesByDate = new Map<string, MatchWithDetails[]>()
+  sortedMatches.forEach(match => {
+    const date = match.played_at.split('T')[0]
+    if (!matchesByDate.has(date)) {
+      matchesByDate.set(date, [])
+    }
+    matchesByDate.get(date)!.push(match)
+  })
+
+  // Process each date
+  matchesByDate.forEach((dayMatches, date) => {
+    dayMatches.forEach(match => {
+      match.match_players.forEach(mp => {
+        const playerName = mp.player.name
+        if (!cumulativeWins[playerName]) {
+          cumulativeWins[playerName] = 0
+        }
+        if (mp.is_winner) {
+          cumulativeWins[playerName]++
+        }
+      })
+    })
+
+    // Create data point for this date
+    const dataPoint: WinsOverTimeDataPoint = { date }
+    Object.entries(cumulativeWins).forEach(([name, wins]) => {
+      dataPoint[name] = wins
+    })
+    winsOverTime.push(dataPoint)
+  })
+
+  // Calculate monthly activity
+  const monthlyMap = new Map<string, number>()
+  sortedMatches.forEach(match => {
+    const date = new Date(match.played_at)
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    monthlyMap.set(monthKey, (monthlyMap.get(monthKey) || 0) + 1)
+  })
+
+  const monthlyActivity: MonthlyActivityDataPoint[] = Array.from(monthlyMap.entries())
+    .map(([month, matches]) => ({
+      month: formatMonth(month),
+      matches,
+    }))
+
+  return {
+    winsOverTime,
+    monthlyActivity,
+    playerColors,
+  }
+}
+
+function formatMonth(monthKey: string): string {
+  const [year, month] = monthKey.split('-')
+  const date = new Date(parseInt(year), parseInt(month) - 1)
+  return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
 }

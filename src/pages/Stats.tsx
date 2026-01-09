@@ -6,17 +6,30 @@
  * - Player leaderboards
  * - Match duration stats
  * - Win streaks
+ * - Charts for wins over time and match activity
  */
 
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts'
 import { useStats } from '@/hooks/useStats'
 import { formatTotalTime, formatMinutesToTime, formatDateShort, cn } from '@/lib/utils'
 import { PageLoader } from '@/components/ui/LoadingSpinner'
 import { OutcomeBadge } from '@/components/ui/OutcomeBadge'
 
 export function Stats() {
-  const { totalMatches, playerStats, matchDurationStats, loading, error, refetch } = useStats()
+  const { totalMatches, playerStats, matchDurationStats, chartData, loading, error, refetch } = useStats()
 
   if (loading) {
     return <PageLoader />
@@ -182,6 +195,114 @@ export function Stats() {
             )}
           </div>
         </motion.section>
+
+        {/* Charts Section */}
+        {chartData.winsOverTime.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.35 }}
+            className="mb-12"
+          >
+            <h2 className="font-heading text-xl text-parchment-200 mb-4">
+              Progress Over Time
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Wins Over Time Chart */}
+              <div className="card p-6">
+                <h3 className="font-heading text-sm text-shadow-500 uppercase tracking-wider mb-4">
+                  Cumulative Wins
+                </h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData.winsOverTime}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#6b6b6b"
+                        tick={{ fill: '#6b6b6b', fontSize: 11 }}
+                        tickFormatter={(value) => {
+                          const date = new Date(value)
+                          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        }}
+                      />
+                      <YAxis 
+                        stroke="#6b6b6b"
+                        tick={{ fill: '#6b6b6b', fontSize: 11 }}
+                        allowDecimals={false}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1a1a1a', 
+                          border: '1px solid #333',
+                          borderRadius: '8px',
+                          color: '#e8e4d9'
+                        }}
+                        labelFormatter={(value) => {
+                          const date = new Date(value)
+                          return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                        }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '10px' }}
+                      />
+                      {Object.entries(chartData.playerColors).map(([playerName, color]) => (
+                        <Line
+                          key={playerName}
+                          type="monotone"
+                          dataKey={playerName}
+                          stroke={color}
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4, fill: color }}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Monthly Activity Chart */}
+              <div className="card p-6">
+                <h3 className="font-heading text-sm text-shadow-500 uppercase tracking-wider mb-4">
+                  Match Activity by Month
+                </h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData.monthlyActivity}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+                      <XAxis 
+                        dataKey="month" 
+                        stroke="#6b6b6b"
+                        tick={{ fill: '#6b6b6b', fontSize: 11 }}
+                      />
+                      <YAxis 
+                        stroke="#6b6b6b"
+                        tick={{ fill: '#6b6b6b', fontSize: 11 }}
+                        allowDecimals={false}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1a1a1a', 
+                          border: '1px solid #333',
+                          borderRadius: '8px',
+                          color: '#e8e4d9'
+                        }}
+                        formatter={(value) => [`${value}`, 'Matches']}
+                      />
+                      <Bar 
+                        dataKey="matches" 
+                        fill="#d4a84a" 
+                        radius={[4, 4, 0, 0]}
+                        name="Matches"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        )}
 
         {/* Player Leaderboard */}
         <motion.section
