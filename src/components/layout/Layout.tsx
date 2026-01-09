@@ -7,11 +7,23 @@
  * - Minimal footer
  */
 
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation, Navigate } from 'react-router-dom'
 import { Header } from './Header'
 import { Footer } from './Footer'
+import { useAuthContext } from '@/contexts/AuthContext'
 
 export function Layout() {
+  const { user, needsSetup, loading } = useAuthContext()
+  const location = useLocation()
+
+  // Redirect to setup if logged in but no player record
+  // (except when already on setup or auth callback pages)
+  const isAuthPage = location.pathname === '/setup' || location.pathname === '/auth/callback'
+  
+  if (!loading && user && needsSetup && !isAuthPage) {
+    return <Navigate to="/setup" replace />
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Ambient glow at the top */}
