@@ -15,15 +15,32 @@ import { PLAYER_COLORS, ACCOLADES, type MatchOutcome } from '@/types'
 
 type Step = 'password' | 'upload' | 'details' | 'players' | 'review'
 
-// Check if already authenticated this session
-const SESSION_KEY = 'eldenbingo_authenticated'
+// Persistent authentication with expiration (30 days)
+const AUTH_KEY = 'eldenbingo_authenticated'
+const AUTH_EXPIRY_DAYS = 30
 
 function isAuthenticated(): boolean {
-  return sessionStorage.getItem(SESSION_KEY) === 'true'
+  const authData = localStorage.getItem(AUTH_KEY)
+  if (!authData) return false
+  
+  try {
+    const { expires } = JSON.parse(authData)
+    if (Date.now() > expires) {
+      // Expired, remove it
+      localStorage.removeItem(AUTH_KEY)
+      return false
+    }
+    return true
+  } catch {
+    // Invalid data, remove it
+    localStorage.removeItem(AUTH_KEY)
+    return false
+  }
 }
 
 function setAuthenticated(): void {
-  sessionStorage.setItem(SESSION_KEY, 'true')
+  const expires = Date.now() + (AUTH_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ expires }))
 }
 
 interface PlayerInput {
