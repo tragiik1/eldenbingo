@@ -119,6 +119,8 @@ export function ProfileSetup() {
               />
               <p className="mt-2 text-xs text-shadow-500">
                 This name will appear on the leaderboard and your matches.
+                <br />
+                <span className="text-parchment-500">If you've played before, use your existing name to claim your stats.</span>
               </p>
             </div>
 

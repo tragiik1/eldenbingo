@@ -160,6 +160,7 @@ export function useAuth(): UseAuthReturn {
   }, [])
 
   // Setup player profile (first-time setup)
+  // If a player with this name exists but isn't linked to a user, claim it
   const setupPlayer = useCallback(async (displayName: string) => {
     if (!state.user) {
       throw new Error('Must be logged in to setup player')
@@ -170,7 +171,44 @@ export function useAuth(): UseAuthReturn {
       throw new Error('Display name is required')
     }
 
-    // Create player record
+    // Check if a player with this name already exists
+    const { data: existingPlayer } = await supabase
+      .from('players')
+      .select('*')
+      .ilike('name', trimmedName)
+      .single()
+
+    if (existingPlayer) {
+      // Player exists - check if it's unclaimed (no user_id)
+      if (!existingPlayer.user_id) {
+        // Claim this player - link to current user
+        const { data: claimedPlayer, error: claimError } = await supabase
+          .from('players')
+          .update({ 
+            user_id: state.user.id,
+            avatar_url: discordAvatar || existingPlayer.avatar_url,
+          })
+          .eq('id', existingPlayer.id)
+          .select()
+          .single()
+
+        if (claimError) {
+          throw claimError
+        }
+
+        setState(prev => ({
+          ...prev,
+          player: claimedPlayer as Player,
+          needsSetup: false,
+        }))
+        return
+      } else {
+        // Player is already claimed by another user
+        throw new Error('This name is already taken. Please choose another.')
+      }
+    }
+
+    // No existing player, create new one
     const { data: player, error } = await supabase
       .from('players')
       .insert({
@@ -183,7 +221,7 @@ export function useAuth(): UseAuthReturn {
       .single()
 
     if (error) {
-      // Check for duplicate name
+      // Check for duplicate name (race condition)
       if (error.code === '23505') {
         throw new Error('This name is already taken. Please choose another.')
       }
