@@ -24,12 +24,39 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder-key',
   {
     auth: {
-      // No persistent auth - this is a trust-based friend group app
-      persistSession: false,
-      autoRefreshToken: false,
+      persistSession: true,
+      autoRefreshToken: true,
     },
   }
 );
+
+/**
+ * Sign in with Discord OAuth
+ */
+export async function signInWithDiscord() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+  
+  if (error) {
+    console.error('Discord login error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Sign out the current user
+ */
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error('Sign out error:', error);
+    throw error;
+  }
+}
 
 /**
  * Upload a board image to Supabase Storage

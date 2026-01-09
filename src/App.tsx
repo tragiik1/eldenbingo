@@ -6,6 +6,7 @@
  */
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
 import { Layout } from './components/layout/Layout'
 import { Home } from './pages/Home'
 import { Match } from './pages/Match'
@@ -13,22 +14,28 @@ import { Gallery } from './pages/Gallery'
 import { Submit } from './pages/Submit'
 import { About } from './pages/About'
 import { Stats } from './pages/Stats'
+import { ProfileSetup } from './pages/ProfileSetup'
+import { AuthCallback } from './pages/AuthCallback'
 import { NotFound } from './pages/NotFound'
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/match/:id" element={<Match />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/submit" element={<Submit />} />
-          <Route path="/stats" element={<Stats />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/match/:id" element={<Match />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/submit" element={<Submit />} />
+            <Route path="/stats" element={<Stats />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/setup" element={<ProfileSetup />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

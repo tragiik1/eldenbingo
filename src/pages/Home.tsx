@@ -107,9 +107,9 @@ export function Home() {
             className="text-center"
           >
             <p className="font-body text-lg text-parchment-400 leading-relaxed max-w-2xl mx-auto">
-              This is not a leaderboard. No rankings, no ELO, no competitive pressure.
+              An archive for friends who share the curse of Elden Ring bingo.
               <span className="block mt-4 text-shadow-500">
-                Just a place to keep track of matches played with friends.
+                Track your matches. See who's on top. Remember the suffering.
               </span>
             </p>
           </motion.div>
