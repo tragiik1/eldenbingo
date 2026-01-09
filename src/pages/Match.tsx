@@ -82,11 +82,11 @@ export function Match() {
               transition={{ duration: 0.6 }}
               className="relative"
             >
-              <div className="image-frame shadow-glow">
+              <div className="relative overflow-hidden bg-shadow-900 border border-shadow-800/60 shadow-glow">
                 <img
                   src={match.board.image_url}
                   alt={`Bingo board for ${match.title}`}
-                  className="w-full aspect-square object-cover"
+                  className="w-full aspect-square object-contain"
                 />
               </div>
               

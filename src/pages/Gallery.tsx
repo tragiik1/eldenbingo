@@ -221,7 +221,7 @@ function Lightbox({ match, onClose }: LightboxProps) {
         </button>
 
         {/* Image */}
-        <div className="image-frame shadow-glow-strong">
+        <div className="relative overflow-hidden bg-shadow-900 border border-shadow-800/60 shadow-glow-strong">
           <img
             src={match.board.image_url}
             alt={match.title}

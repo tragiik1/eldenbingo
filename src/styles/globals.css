@@ -229,7 +229,7 @@
 
   /* Image container with loading state */
   .image-frame {
-    @apply relative overflow-hidden rounded-lg;
+    @apply relative overflow-hidden rounded-sm;
     @apply bg-shadow-900 border border-shadow-800/60;
   }
 
