@@ -7,7 +7,7 @@
  * - Handles first-time name setup flow
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase, signInWithDiscord, signOut } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 import type { Player } from '@/types'
@@ -34,8 +34,6 @@ export function useAuth(): UseAuthReturn {
     loading: true,
     needsSetup: false,
   })
-  
-  const initialized = useRef(false)
 
   // Extract Discord info from user metadata
   const discordUsername = state.user?.user_metadata?.full_name || 
@@ -76,10 +74,6 @@ export function useAuth(): UseAuthReturn {
 
   // Initialize auth state
   useEffect(() => {
-    // Prevent double initialization in React Strict Mode
-    if (initialized.current) return
-    initialized.current = true
-
     // Check if Supabase is configured
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
@@ -92,38 +86,16 @@ export function useAuth(): UseAuthReturn {
       return
     }
 
-    let sessionHandled = false
+    console.log('Auth: Initializing...')
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth event:', event)
-        sessionHandled = true
-        
-        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await handleSession(session)
-        } else if (event === 'SIGNED_OUT') {
-          setState({
-            user: null,
-            player: null,
-            loading: false,
-            needsSetup: false,
-          })
-        }
-      }
-    )
-
-    // Manually get session as backup (in case INITIAL_SESSION doesn't fire)
-    const checkSession = async () => {
-      // Wait a bit to see if onAuthStateChange fires first
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      if (!sessionHandled) {
-        console.log('Auth: Manual session check (event did not fire)')
+    // Just get the session directly - simpler approach
+    const initAuth = async () => {
+      try {
+        console.log('Auth: Getting session...')
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('Error getting session:', error)
+          console.error('Auth: Session error:', error)
           setState({
             user: null,
             player: null,
@@ -133,11 +105,39 @@ export function useAuth(): UseAuthReturn {
           return
         }
         
+        console.log('Auth: Session result:', session ? 'logged in' : 'not logged in')
         await handleSession(session)
+      } catch (err) {
+        console.error('Auth: Exception:', err)
+        setState({
+          user: null,
+          player: null,
+          loading: false,
+          needsSetup: false,
+        })
       }
     }
     
-    checkSession()
+    initAuth()
+
+    // Set up auth state listener for future changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth event:', event)
+        
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await handleSession(session)
+        } else if (event === 'SIGNED_OUT') {
+          setState({
+            user: null,
+            player: null,
+            loading: false,
+            needsSetup: false,
+          })
+        }
+        // Ignore INITIAL_SESSION since we handle it manually above
+      }
+    )
 
     // Failsafe timeout - if nothing happens in 5 seconds, stop loading
     const timeout = setTimeout(() => {
